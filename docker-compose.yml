@@ -1,0 +1,11 @@
+services:
+    nestjs_api:
+      build: 
+        context: .
+        dockerfile: dockerfile
+      ports:
+        - "4000:4000"
+      environment:
+        - LOGO_GENERATOR_TOOL_API_KEY="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"
+        - PORT=4000
+        - NODE_ENV=production
