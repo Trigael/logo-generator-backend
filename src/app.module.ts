@@ -5,13 +5,15 @@ import { LogoModule } from './logo/logo.module';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { ImageGeneratorModule } from './image-generator/image-generator.module';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
   imports: [LogoModule, HttpModule,
     ConfigModule.forRoot({
       isGlobal: true, 
     }),
-    ImageGeneratorModule
+    ImageGeneratorModule,
+    LoggerModule
   ],
   controllers: [AppController],
   providers: [AppService],
