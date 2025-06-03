@@ -12,7 +12,18 @@ export class LogoService {
     ) {}
 
     async generateLogo(body: GenerateLogoDto) {
+    async generateLogo(body: GenerateLogoDto, session_id?: string) {
         const response = await this.imageGenerator.generateLogo(body)
+
+        // Save picture into DB
+        const logo = await this.db.pics.create({ data: {
+          url: response.data.url, 
+          prompt: response.data.prompt,
+          session_id: session_id ?? null
+        }})
+
+        response.data.id = logo.id_pics
+
         return response;
     }
 }
