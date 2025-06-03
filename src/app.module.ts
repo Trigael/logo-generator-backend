@@ -8,6 +8,7 @@ import { ImageGeneratorModule } from './image-generator/image-generator.module';
 import { LoggerModule } from './logger/logger.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DatabaseModule } from './database/database.module';
+import { MailModule } from './mail/mail.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -16,10 +17,10 @@ import { UsersModule } from './users/users.module';
       isGlobal: true, 
     }),
     ImageGeneratorModule,
-    LoggerModule
     LoggerModule,
     PaymentsModule,
     DatabaseModule,
+    MailModule,
     UsersModule
   ],
   controllers: [AppController],
