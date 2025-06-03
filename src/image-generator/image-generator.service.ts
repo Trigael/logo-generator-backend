@@ -28,6 +28,8 @@ export class ImageGeneratorService {
         const response = await firstValueFrom(
             this.httpService.post('https://api.openai.com/v1/images/generations', data, {headers})
         )
+
+        response.data.prompt = prompt
         
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return response.data;
