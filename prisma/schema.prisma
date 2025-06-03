@@ -1,0 +1,86 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url  	    = env("DATABASE_TRANSACTION_URL")
+}
+
+// ENUMS
+enum Pic_states {
+  TEMP 
+  ACTIVE
+}
+
+enum Currencies {
+  CZK
+  EUR
+}
+
+enum Payment_states {
+  UNPAID
+  COMPLETED
+}
+
+// MODELS
+model Users {
+  id_user   Int   @id @default(autoincrement())
+  id_supabase   String?   @unique
+
+  // Data
+  email   String
+
+  created_at DateTime     @default(now())  
+  updated_at DateTime     @updatedAt 
+
+  // FKs
+  Payments Payments[]
+  Pics Pics[]
+}
+
+model Payments {
+  id_payment    Int   @id @default(autoincrement())
+
+  // Data
+  user_id   Int
+  stripe_id   String?
+  price    Float
+  currency    Currencies?    @default(EUR)
+  state   Payment_states?   @default(UNPAID)
+
+  created_at DateTime     @default(now())  
+  updated_at DateTime     @updatedAt 
+
+  // FK Relations
+  user    Users   @relation(fields: [user_id], references: [id_user])
+
+  // FKs
+  Pics Pics[]
+}
+
+model Pics {
+  id_pics   Int   @id @default(autoincrement())
+
+  // Data
+  url   String
+  payment_id   Int?
+  user_id   Int?
+  state   Pic_states    @default(TEMP)
+  prompt    String    @default("")
+
+  session_id    String?
+  created_at    DateTime     @default(now())  
+  updated_at    DateTime     @updatedAt 
+
+  // FK Relations
+  payment    Payments?   @relation(fields: [payment_id], references: [id_payment])
+  user    Users?   @relation(fields: [user_id], references: [id_user])
+}
