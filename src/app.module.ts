@@ -8,6 +8,7 @@ import { ImageGeneratorModule } from './image-generator/image-generator.module';
 import { LoggerModule } from './logger/logger.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DatabaseModule } from './database/database.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [LogoModule, HttpModule,
@@ -16,8 +17,10 @@ import { DatabaseModule } from './database/database.module';
     }),
     ImageGeneratorModule,
     LoggerModule
+    LoggerModule,
     PaymentsModule,
     DatabaseModule,
+    UsersModule
   ],
   controllers: [AppController],
   providers: [AppService],
