@@ -6,6 +6,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { ImageGeneratorModule } from './image-generator/image-generator.module';
 import { LoggerModule } from './logger/logger.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [LogoModule, HttpModule,
@@ -14,6 +15,7 @@ import { LoggerModule } from './logger/logger.module';
     }),
     ImageGeneratorModule,
     LoggerModule
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
