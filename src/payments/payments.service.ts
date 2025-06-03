@@ -5,12 +5,14 @@ import { Currencies, Payment_states, Pic_states } from '@prisma/client';
 
 import { DatabaseService } from 'src/database/database.service';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class PaymentsService {
     constructor(
         private readonly db: DatabaseService,
-        private readonly httpService: HttpService
+        private readonly httpService: HttpService,
+        private readonly mailService: MailService,
     ) {}
 
     async getPayment(payment_id: number) {
@@ -115,13 +117,15 @@ export class PaymentsService {
         })
         
         // Updating Logos state
-        if(!logo) {
+        if(logo) {
             this.db.pics.update({
                 where: { id_pics: logo.id_pics },
                 data: { state: Pic_states.ACTIVE }
             })
+
+            // Send email with logo
+            this.mailService.sendLogoEmailAfterPayment(payment.id_payment)
         }
-        // TODO: Send email with logo
     }
     //#endregion
 }
