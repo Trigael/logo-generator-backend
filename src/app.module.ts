@@ -10,6 +10,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { DatabaseModule } from './database/database.module';
 import { MailModule } from './mail/mail.module';
 import { UsersModule } from './users/users.module';
+import { PricesModule } from './prices/prices.module';
 
 @Module({
   imports: [LogoModule, HttpModule,
@@ -21,7 +22,8 @@ import { UsersModule } from './users/users.module';
     PaymentsModule,
     DatabaseModule,
     MailModule,
-    UsersModule
+    UsersModule,
+    PricesModule
   ],
   controllers: [AppController],
   providers: [AppService],

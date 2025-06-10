@@ -16,10 +16,6 @@ import {
 } from 'class-validator';
 
 export class BuyLogoDto {
-  @IsInt()
-  @IsNotEmpty()
-  logo_url: string
-
   @IsEnum(Currencies)
   @IsOptional()
   currency?:  Currencies
@@ -29,6 +25,5 @@ export class BuyLogoDto {
   email: string
   
   @IsNotEmpty()
-  @IsInt()
-  logo_id: number
+  logo_ids: number[]
 }

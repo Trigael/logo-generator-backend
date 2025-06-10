@@ -11,7 +11,7 @@ export class PaymentsController {
     }
     
     @Get('verify/:id')
-    verifyPayment(@Param('id', ParseIntPipe) id: VerifyPaymentDto['session_id']) {
+    verifyPayment(@Param('id') id: VerifyPaymentDto['session_id']) {
         return this.paymentsService.verifyPayment({session_id: id})
     }
 }

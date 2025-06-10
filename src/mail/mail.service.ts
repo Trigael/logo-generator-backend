@@ -32,7 +32,7 @@ export class MailService {
                         {
                             From: {
                                 Email: process.env.MAILJET_FROM_EMAIL,
-                                Name: process.env.MAILJET_FROM_NAME || 'Gym Reservations',
+                                Name: process.env.MAILJET_FROM_NAME ?? 'AI Logo Creator',
                             },
                             To: [{ Email: to,
                               Name: 'Příjemce'
@@ -47,7 +47,9 @@ export class MailService {
 
             return response.body;
         } catch (error) {
-            console.log(`MailService Error: ${error}`)
+            if (error.response) console.error('Mailjet error response:', error.response.body);
+
+            console.error(`[MailService] Error: ${error}`);
         }
     }
 
@@ -67,7 +69,7 @@ export class MailService {
             `[${payment.id_payment}] Potvrzení platby`,
             Number(process.env.MAILJET_TEMPLATE_ID),
             {
-                logo_url: `${logo?.url}`,
+                logo_url: `${logo[0]?.url}`,
             }
         )
     }

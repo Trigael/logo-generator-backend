@@ -1,13 +1,18 @@
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
+import Stripe from 'stripe';
 
+// DTOs
 import { GenerateLogoDto } from './dto/generate-logo.dto';
 import { BuyLogoDto } from './dto/buy-logo.dto';
 
+// Services
 import { ImageGeneratorService } from 'src/image-generator/image-generator.service';
 import { DatabaseService } from 'src/database/database.service';
 import { PaymentsService } from 'src/payments/payments.service';
-import Stripe from 'stripe';
+import { PricesService } from 'src/prices/prices.service';
+import { Currencies, Pic_states } from '@prisma/client';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class LogoService {
@@ -15,6 +20,8 @@ export class LogoService {
         private readonly db: DatabaseService,
         private readonly imageGenerator: ImageGeneratorService,
         private readonly paymentsService: PaymentsService,
+        private readonly pricesService: PricesService,
+        private readonly usersService: UsersService,
     ) {}
 
     async getLogo(logo_id: number) {
@@ -22,50 +29,83 @@ export class LogoService {
     }
 
     async getLogoByPayment(payment_id: number) {
-      return await this.db.pics.findFirst({ where: {payment_id: payment_id}})
+      return await this.db.pics.findMany({ where: {payment_id: payment_id}})
     }
 
     async generateLogo(body: GenerateLogoDto, session_id?: string) {
         const response = await this.imageGenerator.generateLogo(body)
         
-        // Save picture into DB
-        const logo = await this.db.pics.create({ data: {
-          url: response.data[0].url, 
-          prompt: response.prompt,
-          session_id: session_id ?? null
-        }})
+        for(let i = 0; i < response.data.length; i++) {
+          // Save picture into DB
+          const logo = await this.db.pics.create({ data: {
+            url: response.data[i].url, 
+            prompt: response.prompt,
+            session_id: session_id ?? null
+          }})
 
-        response.data.id = logo.id_pics
+          response.data[i].id = logo.id_pics
+        }
 
         return response;
     }
 
     async buyLogo(body: BuyLogoDto) {
         // Retrieving product from Stripe
-        const price: any = await this._findStripeProductPrice(process.env.STRIPE_LOGO_PRODUCT_ID, body.currency)
+        const price = await this.pricesService.getPriceOfGeneratedLogo()
 
-        if(!price.price_found) return { success: false, error_message: `Price or the currency wasn't found for product: ${process.env.STRIPE_LOGO_PRODUCT_ID}` }
+        if(!price) return { success: false, error_message: `Price  wasn't found for product: ${process.env.STRIPE_LOGO_PRODUCT_ID}` }
 
-        // Getting user info
-        let user: any = await this.db.users.findFirst({ where: {email: body.email}})
-
+        // Get info for existing user or create new user
+        let user: any = await this.usersService.createUser(body.email)
+        
         // Users does not exists yet
         user ??= await this.db.users.create({ data: { email: body.email }});      
 
         // Creating Payment
-        const payment = await this.paymentsService.createPayment(price.price?.amount, price.price?.currency, body.email, user.id_user, price.price.priceId)
+        const payment = await this.paymentsService.createPaymentForLogos(
+          price, 
+          body.currency ?? Currencies.EUR, 
+          body.email, 
+          user.id_user,
+          body.logo_ids 
+        )
 
         // Update logo info in DB with its payment id
-        this.db.pics.update({ 
+        for(let i = 0; i < body.logo_ids.length; i++ ) {
+          this.db.pics.update({ 
             where: {
-                id_pics: body.logo_id
+                id_pics: body.logo_ids[i]
             },  
             data: { 
                 payment_id: payment.payment_id
             }
         })
+        }
 
         return payment
+    }
+
+    async getLogosURLs(logo_ids: number[]) {
+      let urls: string[] = []
+
+      for(let i = 0; i < logo_ids.length; i++) {
+        let resp = await this.db.pics.findFirst({ where: { id_pics: logo_ids[i] }})
+
+        urls.push(resp ? resp.url ?? '' : '')
+      }
+
+      return urls
+    }
+
+    async updateLogosByPayment(payment_id: number, logo_state: Pic_states) {
+      const logos = await this.getLogoByPayment(payment_id)
+      
+      for(let i = 0; i < logos.length; i++) {
+        this.db.pics.update({
+          where: { id_pics: logos[i].id_pics },
+          data: { state: logo_state }
+        })
+      }
     }
 
     // #region PRIVATE FUNCTIONS
