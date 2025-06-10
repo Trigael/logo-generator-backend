@@ -26,6 +26,7 @@ enum Currencies {
 }
 
 enum Payment_states {
+  CREATED
   UNPAID
   COMPLETED
 }
@@ -33,7 +34,6 @@ enum Payment_states {
 // MODELS
 model Users {
   id_user   Int   @id @default(autoincrement())
-  id_supabase   String?   @unique
 
   // Data
   email   String
@@ -54,7 +54,7 @@ model Payments {
   stripe_id   String?
   price    Float
   currency    Currencies?    @default(EUR)
-  state   Payment_states?   @default(UNPAID)
+  state   Payment_states?   @default(CREATED)
 
   created_at DateTime     @default(now())  
   updated_at DateTime     @updatedAt 
@@ -83,4 +83,14 @@ model Pics {
   // FK Relations
   payment    Payments?   @relation(fields: [payment_id], references: [id_payment])
   user    Users?   @relation(fields: [user_id], references: [id_user])
+}
+
+model Prices {
+  id_price    Int   @id @default(autoincrement())
+  currency    Currencies    @default(EUR)
+  price     Float   @default(5)
+  product   String
+
+  created_at DateTime     @default(now())  
+  updated_at DateTime     @updatedAt 
 }
