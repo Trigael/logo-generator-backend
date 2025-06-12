@@ -3,6 +3,8 @@ import { Module } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER, WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 
+import { LokiTransport } from './loki-transport';
+
 import { LoggerService } from './logger.service';
 
 @Module({
@@ -34,6 +36,9 @@ import { LoggerService } from './logger.service';
             ),
           }),
         );
+
+        // Loki transport
+        logger.add(new LokiTransport())
 
         return logger;
       },
