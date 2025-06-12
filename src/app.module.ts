@@ -1,9 +1,14 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+
+import { RequestContextService } from './common/request-context.service';
+
+// Middlewares
+import { SessionMiddleware } from './middleware/session.middleware';
 
 // Module
 import { ImageGeneratorModule } from './image-generator/image-generator.module';
@@ -17,6 +22,8 @@ import { PricesModule } from './prices/prices.module';
 import { PromptsModule } from './prompts/prompts.module';
 import { OrdersModule } from './orders/orders.module';
 import { ProductTypesModule } from './product_types/product_types.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -40,9 +47,12 @@ import { ProductTypesModule } from './product_types/product_types.module';
     PricesModule,
     PromptsModule,
     OrdersModule,
-    ProductTypesModule
+    ProductTypesModule,
+    SessionsModule,
+    CommonModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RequestContextService],
 })
+
 export class AppModule {}

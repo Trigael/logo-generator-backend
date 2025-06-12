@@ -5,11 +5,17 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { HttpExceptionFilter } from './utils/exception.filter';
 import { SentryService } from '@ntegral/nestjs-sentry';
 import { AllExceptionsFilter } from './utils/all-exception.filter';
+import { RequestContextService } from './common/request-context.service';
+import { SessionMiddleware } from './middleware/session.middleware';
+import { SessionsService } from './sessions/sessions.service';
 
 async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   const app = await NestFactory.create(AppModule);
-
+  const sessionService = app.get(SessionsService);
+  const requestContext = app.get(RequestContextService);
+  const sessionMiddleware = new SessionMiddleware(sessionService, requestContext);
+  
   app.setGlobalPrefix('api');
 
   app.enableCors({
@@ -28,6 +34,9 @@ async function bootstrap() {
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
+
+  // Middlewares
+  app.use(sessionMiddleware.use.bind(sessionMiddleware));
 
   // Handles all Exceptions | + Sentry, Logger
   app.useGlobalFilters(new HttpExceptionFilter()); 
