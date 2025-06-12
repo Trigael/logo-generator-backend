@@ -9,6 +9,8 @@ import { PricesService } from 'src/prices/prices.service';
 import { GenerateLogoDto } from './dto/generate-logo.dto';
 import { BuyLogoDto } from './dto/buy-logo.dto';
 import { Currencies } from '@prisma/client';
+import { BuyLogoResponseDto } from './dto/responses/buy-logo-response.dto';
+import { ApiCreatedResponse, ApiResponse } from '@nestjs/swagger';
 
 @Controller('logo')
 export class LogoController {
@@ -23,7 +25,11 @@ export class LogoController {
   }
 
   @Post('buy')
-  buyLogo(@Body() body: BuyLogoDto) {
+  @ApiCreatedResponse({
+    description: "Successful payment intent created to buy specified logos",
+    type: BuyLogoResponseDto
+  })
+  async buyLogo(@Body() body: BuyLogoDto) {
     return this.logoService.buyLogo(body)
   }
 
