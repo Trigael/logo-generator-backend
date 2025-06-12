@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 
 // DTOs
@@ -22,11 +22,13 @@ export class LogoService {
     constructor(
         private readonly db: DatabaseService,
         private readonly imageGenerator: ImageGeneratorService,
-        private readonly paymentsService: PaymentsService,
         private readonly pricesService: PricesService,
         private readonly usersService: UsersService,
         private readonly ordersService: OrdersService,
         private readonly productTypesService: ProductTypesService,
+        
+        @Inject(forwardRef(() => PaymentsService))
+        private readonly paymentsService: PaymentsService,
     ) {}
 
     async createArchivedLogo(data: Prisma.Archived_logosCreateInput): Promise<Archived_logos> {

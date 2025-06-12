@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { LogoController } from './logo.controller';
 import { LogoService } from './logo.service';
@@ -17,11 +17,11 @@ import { ProductTypesModule } from 'src/product_types/product_types.module';
     HttpModule, 
     ImageGeneratorModule, 
     DatabaseModule,
-    PaymentsModule,
     PricesModule,
     UsersModule,
     OrdersModule,
     ProductTypesModule,
+    forwardRef(() => PaymentsModule),
   ],
   controllers: [LogoController],
   providers: [LogoService],
