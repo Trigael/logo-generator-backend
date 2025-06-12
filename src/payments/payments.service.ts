@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
-import { Currencies, Payment_states, Pic_states } from '@prisma/client';
+import { Order_items, Order_states, Orders, Payment_states, Payments, Prisma } from '@prisma/client';
 
 // DTOs
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
@@ -10,6 +10,10 @@ import { VerifyPaymentDto } from './dto/verify-payment.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { MailService } from 'src/mail/mail.service';
 import { LogoService } from 'src/logo/logo.service';
+import { Order_item } from 'src/utils/types.util';
+import { UsersService } from 'src/users/users.service';
+import { InternalErrorException } from 'src/utils/exceptios';
+import { OrdersService } from 'src/orders/orders.service';
 import { getCurrencySymbol } from 'src/utils/helpers.util';
 
 @Injectable()
@@ -18,16 +22,28 @@ export class PaymentsService {
         private readonly db: DatabaseService,
         private readonly httpService: HttpService,
         private readonly mailService: MailService,
+        private readonly usersService: UsersService,
+
         @Inject(forwardRef(() => LogoService))
         private readonly logoService: LogoService,
+        
+        @Inject(forwardRef(() => OrdersService))
+        private readonly ordersService: OrdersService,
     ) {}
 
     async getPayment(payment_id: number) {
         return await this.db.payments.findUnique({ where: {id_payment: payment_id }})
     }
 
-    async getPaymentByStripeID(stripe_id: string) {
+    async getPaymentByStripeID(stripe_id: string): Promise<Payments | null> {
         return await this.db.payments.findFirst({ where: { stripe_id: stripe_id }})
+    }
+
+    async updatePayment(payment_id: number, data: Prisma.PaymentsUpdateInput): Promise<Payments> {
+        return await this.db.payments.update({
+            where: { id_payment: payment_id },
+            data
+        })
     }
 
     async updatePaymentByStripeID(stripe_id: string, payment_state: Payment_states) {
@@ -39,117 +55,112 @@ export class PaymentsService {
         })
     }
     
-    async createPayment(
-        amount: number,
-        currency: Currencies,
-        email: string,
-        user_id: number,
-        price_id: string,
-    ) {
-        // Create log in DB
-        const db_response: any = await this.db.payments.create({ 
-            data: { user_id, price: amount, currency: `${currency.toUpperCase()}` as Currencies }
-        })
+    // async createPayment(
+    //     amount: number,
+    //     currency: Currencies,
+    //     email: string,
+    //     user_id: number,
+    //     price_id: string,
+    // ) {
+    //     // Create log in DB
+    //     const db_response: any = await this.db.payments.create({ 
+    //         data: { user_id, price: amount, currency: `${currency.toUpperCase()}` as Currencies }
+    //     })
 
-        // Create payment in Stripe
-        const stripe_repsonse = await this._createStripeTransaction(
-            db_response.payment_id, 
-            email, 
-            [
-                {
-                    price: price_id,
-                    quantity: 1,
-                }
-            ]
-        )
+    //     // Create payment in Stripe
+    //     const stripe_repsonse = await this._createStripeTransaction(
+    //         db_response.payment_id, 
+    //         email, 
+    //         [
+    //             {
+    //                 price: price_id,
+    //                 quantity: 1,
+    //             }
+    //         ]
+    //     )
 
-        if(stripe_repsonse.success) {
-            await this.db.payments.update({ where: {id_payment: db_response.id_payment}, data: { stripe_id: stripe_repsonse.stripe_id } })
-        }
+    //     if(stripe_repsonse.success) {
+    //         await this.db.payments.update({ where: {id_payment: db_response.id_payment}, data: { stripe_id: stripe_repsonse.stripe_id } })
+    //     }
 
-        return stripe_repsonse
-    }
+    //     return stripe_repsonse
+    // }
 
-    async createPaymentForLogos(
-        price: number,
-        currency: Currencies,
-        email: string,
-        user_id: number,
-        logos_id: number[]
-    ) {
-        // Create log in DB
-        const db_response: any = await this.db.payments.create({ 
-            data: { user_id, price: price, currency: `${currency.toUpperCase()}` as Currencies }
-        })
+    async createPaymentForLogos(order: Orders, order_items: Order_item[]): Promise<Payments> {
+        const user = await this.usersService.getUser(order.user_id)
 
-        // Updating payment_id and user_id for each logo
-        if(logos_id) {
-            for(let i = 0; i < logos_id.length; i++) {
-                await this.db.pics.update({
-                    where: { id_pics: logos_id[i]},
-                    data: { 
-                        payment_id: db_response.id_payment,
-                        user_id: user_id,
-                    }
-                })
-            }
-        }
+        if(!user) throw new InternalErrorException(`[PaymentService] User not found. Payment cancelled.`)
+        
+        // Create payment in DB
+        let db_response: any = await this.db.payments.create({ data: {
+            order_id: order.id_order,
+            user_id: order.user_id
+        } })
 
-        // Creating products
-        const images = await this.logoService.getLogosURLs(logos_id)
+        // Creating products for stripe payment
         const products = {
             price_data: {
-                currency: currency.toLocaleLowerCase(),
+                currency: order.currency.toLocaleLowerCase(),
                 product_data: {
                     name: "Custom generated logo",
-                    images: images,
+                    // images: images,
                     // description: "Handmade cotton t-shirt.",
                     // shippable: false,
                     // metadata: { "sku": "T-SHIRT-BLACK-M", "designer": "Alex" },
                     // tax_code: "txcd_10000000",
                 },
-                unit_amount: price * 100, // Needs to be in cents
+                unit_amount: order_items[0].price, // Needs to be in cents
             },
-            quantity: logos_id.length,
+            quantity: order_items.length,
         }
 
         // Create payment in Stripe
         const stripe_repsonse = await this._createStripeTransaction(
             db_response.payment_id, 
-            email,
+            user.email,
             [products]
         )
 
         if(stripe_repsonse.success) {
-            await this.db.payments.update({ where: {id_payment: db_response.id_payment}, data: { stripe_id: stripe_repsonse.stripe_id } })
+            db_response =  await this.db.payments.update({ 
+                where: {id_payment: db_response.id_payment}, 
+                data: { stripe_id: stripe_repsonse.stripe_id } 
+            })
         }
 
-        return stripe_repsonse
+        db_response.stripe = stripe_repsonse
+
+        return db_response
     }
 
     async verifyPayment(body: VerifyPaymentDto) {
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
 
         try {
-          const session = await stripe.checkout.sessions.retrieve(body.session_id);
-          const payment = await this.getPaymentByStripeID(body.session_id)
+          const session = await stripe.checkout.sessions.retrieve(body.session_id); 
         
           if (session.payment_status === 'paid') {
-            this._completePayment(body.session_id)
+            const payment = await this._completePayment(body.session_id)
+            const order: Orders | null = payment ? await this.ordersService.getOrder(payment?.order_id) : null
+
+            if(!order) return { payment_state: 'PAID', ...payment }
 
             return { 
                 payment_state: 'PAID',
-                payment_id: body.session_id,
-                price: payment?.price,
-                currency: payment?.currency,
-                currency_symbol: getCurrencySymbol(payment?.currency ?? 'EUR'),
-                date: payment?.created_at 
+                ...payment,
+                amount: order.total_amount_cents / 100,
+                currency: order.currency,
+                currency_symbol: getCurrencySymbol(order.currency)
             };
           } else {
             return { payment_state: 'UNPAID' };
           }
-        } catch {
-            return { payment_state: 'NOT_FOUND' };
+        } catch (err) {
+            console.error(`[PaymentsService.verifyPayment] Verification failed. ${err}`)
+            return { 
+                payment_state: 'NOT_FOUND',
+                error_message: err 
+            };
         }
     }
 
@@ -162,13 +173,8 @@ export class PaymentsService {
     
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
-            const payment = await this.getPaymentByStripeID(body.session_id)
           
-            this._completePayment(session.id)
-
-            // Update payment and logo states
-            this.updatePaymentByStripeID(body.session_id, Payment_states.COMPLETED)
-            if(payment) this.logoService.updateLogosByPayment(payment?.id_payment, Pic_states.ACTIVE)   
+            await this._completePayment(session.id)
         }
         
         return true
@@ -201,32 +207,66 @@ export class PaymentsService {
         }
     }
 
-    private async _completePayment(stripe_id: string) {
-        const payment: any = await this.getPaymentByStripeID(stripe_id)
-        const logo: any[] = await this.logoService.getLogoByPayment(payment.id_payment)
+    private async _completePayment(stripe_id: string): Promise<Payments | null> {
+        const payment: Payments | null = await this.getPaymentByStripeID(stripe_id)
 
-        if(payment.state == Payment_states.COMPLETED) return
+        if (!payment) {
+            console.error(`[PaymentService] Payment not found for stripe_id=${stripe_id}`)
+            return null
+        }
+        
+        if(payment.state == Payment_states.COMPLETED) return payment
 
         // Updating payments state
-        await this.db.payments.update({ 
-            where: { id_payment: payment.id_payment },
-            data: { state: Payment_states.COMPLETED }
+        await this.updatePayment(payment.id_payment, { 
+            state: Payment_states.COMPLETED 
+        })
+
+        // Updating order state
+        const order = await this.ordersService.updateOrder(payment.order_id, {
+            state: Order_states.COMPLETED,
+            completed_at: new Date(),
         })
 
         payment.state = Payment_states.COMPLETED
         
         // Updating Logos state
-        if(logo) {
-            for(let i = 0; i < logo.length; i++) {
-                await this.db.pics.update({
-                    where: { id_pics: logo[i].id_pics },
-                    data: { state: Pic_states.ACTIVE }
-                })
-            }
-            
+        const product_types_included = await this._updatedOrderItems(payment.order_id, true)
+
+        if(product_types_included.generated_logo) {
             // Send email with logo
             this.mailService.sendLogoEmailAfterPayment(payment.id_payment)
         }
+
+        return payment
+    }
+
+    async _updatedOrderItems(order_id: number, logo_bought: boolean) {
+        const order_items: Order_items[] = await this.db.order_items.findMany({ 
+            where: { order_id: order_id }
+        }) 
+        let product_types_included = {
+            generated_logo: false
+        }
+
+        for(let i = 0; i < order_items.length; i++) {
+            if(order_items[i].archived_logo_id == null) continue 
+
+            const archived_logo = await this.db.archived_logos.findFirst({
+                where: { id_archived_logo: order_items[i].archived_logo_id! }
+            })
+
+            if(!archived_logo) continue 
+
+            await this.db.prompted_logos.update({
+                where: { id_prompted_logo: archived_logo.prompted_logo_id },
+                data: { bought: logo_bought }
+            })
+
+            product_types_included.generated_logo = true
+        }
+
+        return product_types_included
     }
     //#endregion
 }

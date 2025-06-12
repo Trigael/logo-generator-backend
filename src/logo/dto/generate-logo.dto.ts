@@ -1,3 +1,4 @@
+import { Logo_resolutions } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
@@ -45,8 +46,8 @@ export class GenerateLogoDto {
     additional_details: string;
 
     @IsOptional()
-    @IsString()
-    logo_resolution: string;
+    @IsEnum(Logo_resolutions)
+    logo_resolution: Logo_resolutions;
 
     @IsOptional()
     @IsNumber()

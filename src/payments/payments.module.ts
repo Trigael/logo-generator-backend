@@ -8,12 +8,16 @@ import { PaymentsService } from './payments.service';
 import { DatabaseModule } from 'src/database/database.module';
 import { MailModule } from 'src/mail/mail.module';
 import { LogoModule } from 'src/logo/logo.module';
+import { UsersModule } from 'src/users/users.module';
+import { OrdersModule } from 'src/orders/orders.module';
 
 @Module({
   imports: [
     HttpModule, 
     DatabaseModule, 
     MailModule,
+    UsersModule,
+    forwardRef(() => OrdersModule),
     forwardRef(() => LogoModule),
   ],
   controllers: [PaymentsController],

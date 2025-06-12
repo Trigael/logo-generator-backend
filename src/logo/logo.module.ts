@@ -9,6 +9,8 @@ import { DatabaseModule } from 'src/database/database.module';
 import { PaymentsModule } from 'src/payments/payments.module';
 import { PricesModule } from 'src/prices/prices.module';
 import { UsersModule } from 'src/users/users.module';
+import { OrdersModule } from 'src/orders/orders.module';
+import { ProductTypesModule } from 'src/product_types/product_types.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { UsersModule } from 'src/users/users.module';
     PaymentsModule,
     PricesModule,
     UsersModule,
+    OrdersModule,
+    ProductTypesModule,
   ],
   controllers: [LogoController],
   providers: [LogoService],

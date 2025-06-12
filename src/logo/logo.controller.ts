@@ -8,6 +8,7 @@ import { PricesService } from 'src/prices/prices.service';
 // DTOs
 import { GenerateLogoDto } from './dto/generate-logo.dto';
 import { BuyLogoDto } from './dto/buy-logo.dto';
+import { Currencies } from '@prisma/client';
 
 @Controller('logo')
 export class LogoController {
@@ -30,7 +31,7 @@ export class LogoController {
   async getGeneratedLogoPrice() {
     // TODO: add multiple currencies to prices
     // TODO: returns price based on currency
-    const price = await this.pricesService.getPriceOfGeneratedLogo()
+    const price = await this.pricesService.getPriceOfGeneratedLogo(Currencies.EUR)
 
     return {
       product: 'generated_logo',

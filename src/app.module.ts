@@ -11,6 +11,9 @@ import { DatabaseModule } from './database/database.module';
 import { MailModule } from './mail/mail.module';
 import { UsersModule } from './users/users.module';
 import { PricesModule } from './prices/prices.module';
+import { PromptsModule } from './prompts/prompts.module';
+import { OrdersModule } from './orders/orders.module';
+import { ProductTypesModule } from './product_types/product_types.module';
 
 @Module({
   imports: [LogoModule, HttpModule,
@@ -23,7 +26,10 @@ import { PricesModule } from './prices/prices.module';
     DatabaseModule,
     MailModule,
     UsersModule,
-    PricesModule
+    PricesModule,
+    PromptsModule,
+    OrdersModule,
+    ProductTypesModule
   ],
   controllers: [AppController],
   providers: [AppService],

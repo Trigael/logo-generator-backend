@@ -54,13 +54,12 @@ export class MailService {
     }
 
     async sendLogoEmailAfterPayment(payment_id: number) {
-        //
+        // TODO: Save in Mails DB Table
         const payment = await this.paymentsService.getPayment(payment_id)
 
         if(!payment) throw new InternalErrorException('Payment not found. Sending cofirmation email failed')
 
         const user = await this.usersService.getUser(payment?.user_id)
-        const logo = await this.logoService.getLogoByPayment(payment.id_payment)
         
         if(!user) throw new InternalErrorException('User not found. Sending cofirmation email failed')
         
@@ -69,7 +68,7 @@ export class MailService {
             `[${payment.id_payment}] Potvrzení platby`,
             Number(process.env.MAILJET_TEMPLATE_ID),
             {
-                logo_url: `${logo[0]?.url}`,
+                logo_url: `PLACEHOLDER_URL/LOGO`,
             }
         )
     }

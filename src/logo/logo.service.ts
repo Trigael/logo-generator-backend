@@ -11,8 +11,11 @@ import { ImageGeneratorService } from 'src/image-generator/image-generator.servi
 import { DatabaseService } from 'src/database/database.service';
 import { PaymentsService } from 'src/payments/payments.service';
 import { PricesService } from 'src/prices/prices.service';
-import { Currencies, Pic_states } from '@prisma/client';
+import { Archived_logos, Currencies, Orders, Prisma, Prompted_logos, Users } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
+import { OrdersService } from 'src/orders/orders.service';
+import { Order_item } from 'src/utils/types.util';
+import { ProductTypesService } from 'src/product_types/product_types.service';
 
 @Injectable()
 export class LogoService {
@@ -22,91 +25,103 @@ export class LogoService {
         private readonly paymentsService: PaymentsService,
         private readonly pricesService: PricesService,
         private readonly usersService: UsersService,
+        private readonly ordersService: OrdersService,
+        private readonly productTypesService: ProductTypesService,
     ) {}
 
-    async getLogo(logo_id: number) {
-      return await this.db.pics.findUnique({ where: {id_pics: logo_id}})
+    async createArchivedLogo(data: Prisma.Archived_logosCreateInput): Promise<Archived_logos> {
+      return await this.db.archived_logos.create({ data })
     }
 
-    async getLogoByPayment(payment_id: number) {
-      return await this.db.pics.findMany({ where: {payment_id: payment_id}})
+    async getOrCreateArchivedLogo(prompted_logo_id: number): Promise<Archived_logos> {
+      const logo = await this.db.archived_logos.findFirst({
+        where: { prompted_logo_id: prompted_logo_id }
+      })
+
+      if(!logo) {
+        return await this.createArchivedLogo({ 
+          prompted_logo: { connect: { id_prompted_logo: prompted_logo_id } 
+        }})
+      }
+
+      return logo
+    }
+
+    async getPromptedLogo(logo_id: number) {
+      return await this.db.prompted_logos.findUnique({ 
+        where: {id_prompted_logo: logo_id}
+      })
+    }
+
+    async createPromptedLogo(data: Prisma.Prompted_logosCreateInput) {
+      return await this.db.prompted_logos.create({ data })
     }
 
     async generateLogo(body: GenerateLogoDto, session_id?: string) {
         const response = await this.imageGenerator.generateLogo(body)
-        
+        const now = new Date()
+
         for(let i = 0; i < response.data.length; i++) {
           // Save picture into DB
-          const logo = await this.db.pics.create({ data: {
-            url: response.data[i].url, 
-            prompt: response.prompt,
-            session_id: session_id ?? null
-          }})
+          const logo: Prompted_logos = await this.createPromptedLogo({
+            prompt: { connect: { id_prompt: response.prompt.id_prompt}},
+            url_to_logo: response.data[i].url,
+            url_valid_to: new Date(now.getTime() + 60 * 60 * 1000)
+          })
 
-          response.data[i].id = logo.id_pics
+          response.data[i].id = logo.id_prompted_logo
         }
 
         return response;
     }
 
     async buyLogo(body: BuyLogoDto) {
-        // Retrieving product from Stripe
-        const price = await this.pricesService.getPriceOfGeneratedLogo()
-
-        if(!price) return { success: false, error_message: `Price  wasn't found for product: ${process.env.STRIPE_LOGO_PRODUCT_ID}` }
-
         // Get info for existing user or create new user
-        let user: any = await this.usersService.createUser(body.email)
+        let user: Users = await this.usersService.createUser(body.email)
         
         // Users does not exists yet
-        user ??= await this.db.users.create({ data: { email: body.email }});      
+        user ??= await this.usersService.createUser(body.email)
+
+        let order_item: Order_item[] = []
+        let prompted_logo = await this.productTypesService.getGeneratedLogoProductType()
+        let prompted_logo_price = await this.pricesService.getPriceOfGeneratedLogo(body.currency ?? Currencies.EUR)
+
+        // Format logo_ids into order_items
+        for(let i = 0; i < body.logo_ids.length; i++) {
+          const archived_logo = await this.getOrCreateArchivedLogo(body.logo_ids[i])
+          order_item.push({
+            product_type_id: prompted_logo?.id_product_type ?? 1,
+            product_type_name: prompted_logo?.name ?? '',
+            amount: 1,
+            price: prompted_logo_price?.amount_cents ?? 0,
+            product_id: archived_logo.id_archived_logo
+          })
+        }
+        
+        // Create order
+        const order: Orders = await this.ordersService.createOrder(
+          user.id_user, body.currency ?? Currencies.EUR, order_item
+        )
 
         // Creating Payment
         const payment = await this.paymentsService.createPaymentForLogos(
-          price, 
-          body.currency ?? Currencies.EUR, 
-          body.email, 
-          user.id_user,
-          body.logo_ids 
+          order, order_item
         )
-
-        // Update logo info in DB with its payment id
-        for(let i = 0; i < body.logo_ids.length; i++ ) {
-          this.db.pics.update({ 
-            where: {
-                id_pics: body.logo_ids[i]
-            },  
-            data: { 
-                payment_id: payment.payment_id
-            }
-        })
-        }
 
         return payment
     }
 
-    async getLogosURLs(logo_ids: number[]) {
-      let urls: string[] = []
+    // async getLogosURLs(logo_ids: number[]) {
+    //   let urls: string[] = []
 
-      for(let i = 0; i < logo_ids.length; i++) {
-        let resp = await this.db.pics.findFirst({ where: { id_pics: logo_ids[i] }})
+    //   for(let i = 0; i < logo_ids.length; i++) {
+    //     let resp = await this.db.pics.findFirst({ where: { id_pics: logo_ids[i] }})
 
-        urls.push(resp ? resp.url ?? '' : '')
-      }
+    //     urls.push(resp ? resp.url ?? '' : '')
+    //   }
 
-      return urls
-    }
-
-    async updateLogosByPayment(payment_id: number, logo_state: Pic_states) {
-      const logos = await this.getLogoByPayment(payment_id)
-      
-      for(let i = 0; i < logos.length; i++) {
-        this.db.pics.update({
-          where: { id_pics: logos[i].id_pics },
-          data: { state: logo_state }
-        })
-      }
-    }
+    //   return urls
+    // }
 
     // #region PRIVATE FUNCTIONS
     private async _findStripeProductPrice(product_id, currency) {
