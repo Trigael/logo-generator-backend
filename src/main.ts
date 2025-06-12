@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import { HttpExceptionFilter } from './utils/exception.filter';
+import { SentryService } from '@ntegral/nestjs-sentry';
+import { AllExceptionsFilter } from './utils/all-exception.filter';
 
 async function bootstrap() {
   const port = process.env.PORT ?? 3000;
@@ -27,7 +29,9 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
+  // Handles all Exceptions | + Sentry, Logger
   app.useGlobalFilters(new HttpExceptionFilter()); 
+  app.useGlobalFilters(new AllExceptionsFilter(app.get(SentryService)));
   
   await app.listen(port,() => {
     console.log(`API running at Port: ${port} in mode: ${process.env.NODE_ENV}`)

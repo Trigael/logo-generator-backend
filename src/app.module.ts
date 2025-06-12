@@ -1,13 +1,16 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { LogoModule } from './logo/logo.module';
+import { SentryModule } from '@ntegral/nestjs-sentry';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+// Module
 import { ImageGeneratorModule } from './image-generator/image-generator.module';
 import { LoggerModule } from './logger/logger.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DatabaseModule } from './database/database.module';
+import { LogoModule } from './logo/logo.module';
 import { MailModule } from './mail/mail.module';
 import { UsersModule } from './users/users.module';
 import { PricesModule } from './prices/prices.module';
@@ -16,10 +19,18 @@ import { OrdersModule } from './orders/orders.module';
 import { ProductTypesModule } from './product_types/product_types.module';
 
 @Module({
-  imports: [LogoModule, HttpModule,
+  imports: [
     ConfigModule.forRoot({
       isGlobal: true, 
     }),
+    SentryModule.forRoot({
+      dsn: process.env.SENTRY_DSN ?? '', 
+      debug: true, 
+      tracesSampleRate: 1.0, 
+      enabled: process.env.NODE_ENV == 'production',
+    }),
+    LogoModule, 
+    HttpModule,
     ImageGeneratorModule,
     LoggerModule,
     PaymentsModule,
