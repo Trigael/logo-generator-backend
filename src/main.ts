@@ -1,22 +1,38 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-
-import { HttpExceptionFilter } from './utils/exception.filter';
 import { SentryService } from '@ntegral/nestjs-sentry';
+import * as express from 'express';
+
+// Filters
+import { HttpExceptionFilter } from './utils/exception.filter';
 import { AllExceptionsFilter } from './utils/all-exception.filter';
+
+// Services
 import { RequestContextService } from './common/request-context.service';
-import { SessionMiddleware } from './middleware/session.middleware';
 import { SessionsService } from './sessions/sessions.service';
+import { UsersService } from './users/users.service';
+
+// Middleware
+import { SessionMiddleware } from './middleware/session.middleware';
+import { ConnectSessionMiddleware } from './middleware/connect-session.middleware';
+
 
 async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   const app = await NestFactory.create(AppModule);
+
   const sessionService = app.get(SessionsService);
   const requestContext = app.get(RequestContextService);
+  const usersService = app.get(UsersService);
+
   const sessionMiddleware = new SessionMiddleware(sessionService, requestContext);
+  const connectSessionMiddleware = new ConnectSessionMiddleware(requestContext, usersService, sessionService);
   
   app.setGlobalPrefix('api');
+
+  app.use(express.json()); 
+  app.use(express.urlencoded({ extended: true }));
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -37,6 +53,7 @@ async function bootstrap() {
 
   // Middlewares
   app.use(sessionMiddleware.use.bind(sessionMiddleware));
+  app.use(connectSessionMiddleware.use.bind(connectSessionMiddleware));
 
   // Handles all Exceptions | + Sentry, Logger
   app.useGlobalFilters(new HttpExceptionFilter()); 
