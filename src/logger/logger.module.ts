@@ -7,11 +7,15 @@ import { LokiTransport } from './loki-transport';
 
 import { LoggerService } from './logger.service';
 
+// Modules
+import { CommonModule } from 'src/common/common.module';
+
 @Module({
   imports: [
     WinstonModule.forRoot({
       transports: [],
     }),
+    CommonModule,
   ],
   providers: [
     LoggerService,

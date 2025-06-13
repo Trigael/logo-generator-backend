@@ -1,8 +1,14 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
+// Middlewares
 import { traceStorage } from './middlewares/trace-id.middleware'; 
+
+// Utils
 import { sanitizeLogData } from './sanitize-log.util';
+
+// Services
+import { RequestContextService } from 'src/common/request-context.service';
 
 interface LogOptions {
   context?: string;
@@ -18,6 +24,8 @@ export class LoggerService {
     constructor(
     @Inject(WINSTON_MODULE_NEST_PROVIDER)
     private readonly logger: any,
+
+    private readonly requestContext: RequestContextService,
   ) {}
 
   log(message: string, options: LogOptions = {}) {
@@ -30,6 +38,9 @@ export class LoggerService {
       traceId: options.traceId ?? store?.get('traceId'),
       ip: options.ip ?? store?.get('ip'),
       metadata: this.maybeSanitize(options.metadata),
+      dynamicMeta: (logEvent) => ({
+        session_id: this.requestContext.sessionId,
+      })
     });
   }
 
@@ -43,6 +54,9 @@ export class LoggerService {
       traceId: options.traceId ?? store?.get('traceId'),
       ip: options.ip ?? store?.get('ip'),
       metadata: this.maybeSanitize(options.metadata),
+      dynamicMeta: (logEvent) => ({
+        session_id: this.requestContext.sessionId,
+      })
     });
   }
 
@@ -56,6 +70,9 @@ export class LoggerService {
       traceId: options.traceId ?? store?.get('traceId'),
       ip: options.ip ?? store?.get('ip'),
       metadata: this.maybeSanitize(options.metadata),
+      dynamicMeta: (logEvent) => ({
+        session_id: this.requestContext.sessionId,
+      })
     });
   }
 
@@ -69,6 +86,9 @@ export class LoggerService {
       traceId: options.traceId ?? store?.get('traceId'),
       ip: options.ip ?? store?.get('ip'),
       metadata: this.maybeSanitize(options.metadata),
+      dynamicMeta: (logEvent) => ({
+        session_id: this.requestContext.sessionId,
+      })
     });
   }
 
