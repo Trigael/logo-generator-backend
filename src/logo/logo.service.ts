@@ -79,10 +79,10 @@ export class LogoService {
 
     async buyLogo(body: BuyLogoDto) {
         // Get info for existing user or create new user
-        let user: Users = await this.usersService.createUser(body.email)
+        let user: Users = await this.usersService.getOrCreateGuestUser(body.email)
         
         // Users does not exists yet
-        user ??= await this.usersService.createUser(body.email)
+        user ??= await this.usersService.getOrCreateGuestUser(body.email)
 
         let order_item: Order_item[] = []
         let prompted_logo = await this.productTypesService.getGeneratedLogoProductType()

@@ -15,7 +15,12 @@ export class UsersService {
         return await this.db.users.findFirst({ where: { email: email }})
     }
 
-    async createUser(email: string) {
+    /**
+     * If user already exists returtns it or creates new one
+     * @param email 
+     * @returns 
+     */
+    async getOrCreateGuestUser(email: string) {
         const user = await this.getUser(undefined, email)
 
         if(user) return user

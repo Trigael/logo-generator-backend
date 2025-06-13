@@ -21,7 +21,7 @@ export class ConnectSessionMiddleware implements NestMiddleware {
     
     // Checking if request contains proper email
     if (typeof email === 'string' && emailRegex.test(email) && typeof session_id === 'string') {
-      const user = await this.usersService.createUser(email)
+      const user = await this.usersService.getOrCreateGuestUser(email)
 
       await this.sessionsService.updateSession(session_id, { user: { connect: { id_user: user.id_user }} })
     } 
