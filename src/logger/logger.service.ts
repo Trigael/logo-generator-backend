@@ -35,7 +35,7 @@ export class LoggerService {
       level: 'info',
       message,
       ...options,
-      traceId: options.traceId ?? store?.get('traceId'),
+      traceId: this.requestContext.sessionId ?? store?.get('traceId'),
       ip: options.ip ?? store?.get('ip'),
       metadata: this.maybeSanitize(options.metadata),
       dynamicMeta: (logEvent) => ({
@@ -51,7 +51,7 @@ export class LoggerService {
       level: 'error',
       message,
       ...options,
-      traceId: options.traceId ?? store?.get('traceId'),
+      traceId: this.requestContext.sessionId ?? store?.get('traceId'),
       ip: options.ip ?? store?.get('ip'),
       metadata: this.maybeSanitize(options.metadata),
       dynamicMeta: (logEvent) => ({
@@ -67,7 +67,7 @@ export class LoggerService {
       level: 'warn',
       message,
       ...options,
-      traceId: options.traceId ?? store?.get('traceId'),
+      traceId: this.requestContext.sessionId ?? store?.get('traceId'),
       ip: options.ip ?? store?.get('ip'),
       metadata: this.maybeSanitize(options.metadata),
       dynamicMeta: (logEvent) => ({
@@ -83,7 +83,7 @@ export class LoggerService {
       level: 'debug',
       message,
       ...options,
-      traceId: options.traceId ?? store?.get('traceId'),
+      traceId: this.requestContext.sessionId ?? store?.get('traceId'),
       ip: options.ip ?? store?.get('ip'),
       metadata: this.maybeSanitize(options.metadata),
       dynamicMeta: (logEvent) => ({
