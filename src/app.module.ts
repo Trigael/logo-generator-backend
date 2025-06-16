@@ -26,6 +26,7 @@ import { SessionsModule } from './sessions/sessions.module';
 import { CommonModule } from './common/common.module';
 import { QueueModule } from './queue/queue.module';
 import { CronsModule } from './crons/crons.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { CronsModule } from './crons/crons.module';
     CommonModule,
     QueueModule,
     CronsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService],
