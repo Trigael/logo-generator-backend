@@ -25,6 +25,7 @@ import { ProductTypesModule } from './product_types/product_types.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { CommonModule } from './common/common.module';
 import { QueueModule } from './queue/queue.module';
+import { CronsModule } from './crons/crons.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { QueueModule } from './queue/queue.module';
     SessionsModule,
     CommonModule,
     QueueModule,
+    CronsModule,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService],

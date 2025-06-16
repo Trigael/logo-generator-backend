@@ -59,6 +59,21 @@ export class LogoService {
       return await this.db.prompted_logos.create({ data })
     }
 
+    async deleteUnboughtLogosOlderThan(days: number) {
+      const targetDate = new Date();
+
+      targetDate.setDate(targetDate.getDate() - days);
+
+      return await this.db.prompted_logos.deleteMany({
+        where: {
+          created_at: {
+            lt: targetDate,
+          },
+          bought: false,
+        },
+      });
+    }
+
     async generateLogo(body: GenerateLogoDto, session_id?: string) {
         const response = await this.imageGenerator.generateLogo(body)
         const now = new Date()
