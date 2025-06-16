@@ -15,6 +15,7 @@ import { UsersService } from 'src/users/users.service';
 import { InternalErrorException } from 'src/utils/exceptios';
 import { OrdersService } from 'src/orders/orders.service';
 import { getCurrencySymbol } from 'src/utils/helpers.util';
+import { LoggerService } from 'src/logger/logger.service';
 
 @Injectable()
 export class PaymentsService {
@@ -23,6 +24,7 @@ export class PaymentsService {
         private readonly httpService: HttpService,
         private readonly mailService: MailService,
         private readonly usersService: UsersService,
+        private readonly logger: LoggerService,
 
         @Inject(forwardRef(() => LogoService))
         private readonly logoService: LogoService,
@@ -145,6 +147,13 @@ export class PaymentsService {
 
             if(!order) return { payment_state: 'PAID', ...payment }
 
+            // Logging payment intent
+            this.logger.log(`Payment ${payment?.id_payment} was successfuly verified`, {
+                metadata: {
+                    payment_id: payment?.id_payment
+                }
+            })
+
             return { 
                 payment_state: 'PAID',
                 ...payment,
@@ -173,6 +182,14 @@ export class PaymentsService {
     
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object;
+            const payment = await this.getPaymentByStripeID(session.id)
+
+            this.logger.log(
+                `Payment ${payment?.id_payment} was successfuly paid for`, {
+                metadata: {
+                    payment_id: payment?.id_payment
+                }
+            })
           
             await this._completePayment(session.id)
         }
@@ -199,6 +216,14 @@ export class PaymentsService {
               cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled`,
               // metadata: { ... } // add order id etc. if needed
             });
+
+            // Logging payment intent
+            this.logger.log(`Payment created for ${email}`, {
+                metadata: {
+                    stripe_session: session,
+                    payment_id: payment_id
+                }
+            })
       
             return { success: true, payment_url: session.url, payment_id, stripe_id: session.id }
         } catch(err) {

@@ -43,7 +43,7 @@ export class LokiTransport extends Transport {
       streams: [
         {
           stream: {
-            app: 'gym-reservations',
+            app: 'ai-logo-generator',
             level: info.level ?? 'info',
             module: info.context ?? 'general',
           },

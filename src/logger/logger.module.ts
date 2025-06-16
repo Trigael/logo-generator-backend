@@ -47,6 +47,7 @@ import { CommonModule } from 'src/common/common.module';
         return logger;
       },
     },
-  ]
+  ],
+  exports: [LoggerService],
 })
 export class LoggerModule {}

@@ -13,7 +13,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // Usual Nest error response logic here
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
-    const status = exception.getStatus?.() || 500;
+    const status = exception.getStatus?.() ?? 500;
     const message = exception.message ?? 'Internal server error';
 
     response.status(status).json({
