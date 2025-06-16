@@ -29,6 +29,7 @@ enum Payment_states {
   CREATED
   UNPAID
   COMPLETED
+  FAILED
 }
 
 enum Transformation_types {
