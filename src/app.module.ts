@@ -24,6 +24,7 @@ import { OrdersModule } from './orders/orders.module';
 import { ProductTypesModule } from './product_types/product_types.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { CommonModule } from './common/common.module';
+import { QueueModule } from './queue/queue.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { CommonModule } from './common/common.module';
     ProductTypesModule,
     SessionsModule,
     CommonModule,
+    QueueModule,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService],

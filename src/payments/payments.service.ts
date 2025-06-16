@@ -16,6 +16,8 @@ import { InternalErrorException } from 'src/utils/exceptios';
 import { OrdersService } from 'src/orders/orders.service';
 import { getCurrencySymbol } from 'src/utils/helpers.util';
 import { LoggerService } from 'src/logger/logger.service';
+import { QueueService } from 'src/queue/queue.service';
+import { tryCatch } from 'bullmq';
 
 @Injectable()
 export class PaymentsService {
@@ -27,6 +29,7 @@ export class PaymentsService {
         private readonly mailService: MailService,
         private readonly usersService: UsersService,
         private readonly logger: LoggerService,
+        private readonly queue: QueueService,
 
         @Inject(forwardRef(() => LogoService))
         private readonly logoService: LogoService,
@@ -259,7 +262,14 @@ export class PaymentsService {
 
         if(product_types_included.generated_logo) {
             // Send email with logo
-            this.mailService.sendLogoEmailAfterPayment(payment.id_payment)
+            try {
+                await this.mailService.sendLogoEmailAfterPayment(payment.id_payment)
+            } catch {
+                this.logger.warn(`[PaymentsService._completePayment] Sending confirmation email for payment ${payment.id_payment} failed. Adding it into the queue.`, { metadata: { payment_id: payment.id_payment } })
+                
+                // Failed to send email, adding it to queue
+                this.queue.addEmailToQueue(payment.id_payment)
+            }
         }
 
         return payment
