@@ -19,6 +19,8 @@ import { LoggerService } from 'src/logger/logger.service';
 
 @Injectable()
 export class PaymentsService {
+    public stripe: Stripe;
+
     constructor(
         private readonly db: DatabaseService,
         private readonly httpService: HttpService,
@@ -31,7 +33,9 @@ export class PaymentsService {
         
         @Inject(forwardRef(() => OrdersService))
         private readonly ordersService: OrdersService,
-    ) {}
+    ) {
+        this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
+    }
 
     async getPayment(payment_id: number) {
         return await this.db.payments.findUnique({ where: {id_payment: payment_id }})
@@ -136,10 +140,8 @@ export class PaymentsService {
     }
 
     async verifyPayment(body: VerifyPaymentDto) {
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
-
         try {
-          const session = await stripe.checkout.sessions.retrieve(body.session_id); 
+          const session = await this.stripe.checkout.sessions.retrieve(body.session_id); 
         
           if (session.payment_status === 'paid') {
             const payment = await this._completePayment(body.session_id)
@@ -174,9 +176,8 @@ export class PaymentsService {
     }
 
     async webhookForStripe(body: any, req: any) {
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
         const sig = req.headers['stripe-signature'];
-        const event = stripe.webhooks.constructEvent(
+        const event = this.stripe.webhooks.constructEvent(
           body, sig, process.env.STRIPE_WEBHOOK_SECRET ?? ''
         );
     
@@ -204,10 +205,8 @@ export class PaymentsService {
         email: string,
         products: any[]
     ) {
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
-        
         try {
-            const session = await stripe.checkout.sessions.create({
+            const session = await this.stripe.checkout.sessions.create({
               payment_method_types: ['card'],
               mode: 'payment',
               line_items: products,
