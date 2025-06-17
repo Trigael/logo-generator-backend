@@ -9,6 +9,7 @@ import { OrdersService } from 'src/orders/orders.service';
 import { LoggerService } from 'src/logger/logger.service';
 import { Payment_states } from '@prisma/client';
 import Stripe from 'stripe';
+import { QueueService } from 'src/queue/queue.service';
 
 const mockPayment = {
   id_payment: 1,
@@ -80,6 +81,10 @@ describe('PaymentsService', () => {
             updateOrder: jest.fn().mockResolvedValue({}),
           },
         },
+        {
+          provide: QueueService,
+          useValue: {}
+        }
       ],
     }).compile();
 
