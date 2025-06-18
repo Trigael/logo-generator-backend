@@ -11,7 +11,7 @@ generator client {
 // prisma/schema.prisma
 datasource db {
   provider  = "postgresql"
-  url  	    = env("DATABASE_TRANSACTION_URL")
+  url  	    = env("DB_TRANSACTION_URL")
 }
 
 // ENUMS

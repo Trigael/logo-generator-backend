@@ -69,62 +69,18 @@ jobs:
       - name: Create env file
         run: echo "GIT_COMMIT_HASH=${{ github.sha }}" >> ./envfile
 
-      - name: Push Docker secrets to server
+      - name: Generate docker-stack file with commit-specific secrets
         run: |
-          ssh -o StrictHostKeyChecking=no deploy@78.47.30.210 << 'EOF'
-            set -e
+          cp docker-stack.yaml docker-stack.generated.yaml
+          sed -i "s/\${GITHUB_SHA}/${{ github.sha }}/g" docker-stack.generated.yaml
 
-            docker secret rm LOGO_GENERATOR_TOOL_API_KEY 2>/dev/null || true
-            echo "$LOGO_GENERATOR_TOOL_API_KEY" | docker secret create LOGO_GENERATOR_TOOL_API_KEY -
-
-            docker secret rm FRONTEND_URL 2>/dev/null || true
-            echo "$FRONTEND_URL" | docker secret create FRONTEND_URL -
-
-            docker secret rm BACKEND_URL 2>/dev/null || true
-            echo "$BACKEND_URL" | docker secret create BACKEND_URL -
-
-            docker secret rm REDIS_URL 2>/dev/null || true
-            echo "$REDIS_URL" | docker secret create REDIS_URL -
-
-            docker secret rm STRIPE_LOGO_PRODUCT_ID 2>/dev/null || true
-            echo "$STRIPE_LOGO_PRODUCT_ID" | docker secret create STRIPE_LOGO_PRODUCT_ID -
-
-            docker secret rm STRIPE_PUBLISHABLE_KEY 2>/dev/null || true
-            echo "$STRIPE_PUBLISHABLE_KEY" | docker secret create STRIPE_PUBLISHABLE_KEY -
-
-            docker secret rm STRIPE_SECRET_KEY 2>/dev/null || true
-            echo "$STRIPE_SECRET_KEY" | docker secret create STRIPE_SECRET_KEY -
-
-            docker secret rm MAILJET_API_KEY 2>/dev/null || true
-            echo "$MAILJET_API_KEY" | docker secret create MAILJET_API_KEY -
-
-            docker secret rm MAILJET_API_SECRET 2>/dev/null || true
-            echo "$MAILJET_API_SECRET" | docker secret create MAILJET_API_SECRET -
-
-            docker secret rm MAILJET_FROM_EMAIL 2>/dev/null || true
-            echo "$MAILJET_FROM_EMAIL" | docker secret create MAILJET_FROM_EMAIL -
-
-            docker secret rm MAILJET_TEMPLATE_ID 2>/dev/null || true
-            echo "$MAILJET_TEMPLATE_ID" | docker secret create MAILJET_TEMPLATE_ID -
-
-            docker secret rm SENTRY_DSN 2>/dev/null || true
-            echo "$SENTRY_DSN" | docker secret create SENTRY_DSN -
-
-            docker secret rm LOKI_USERNAME 2>/dev/null || true
-            echo "$LOKI_USERNAME" | docker secret create LOKI_USERNAME -
-
-            docker secret rm LOKI_PASSWORD 2>/dev/null || true
-            echo "$LOKI_PASSWORD" | docker secret create LOKI_PASSWORD -
-
-            docker secret rm DATABASE_TRANSACTION_URL 2>/dev/null || true
-            echo "$DATABASE_TRANSACTION_URL" | docker secret create DATABASE_TRANSACTION_URL -
-          EOF
+      - name: Push Docker secrets to server
         env:
-          LOGO_GENERATOR_TOOL_API_KEY: ${{ secrets.LOGO_GENERATOR_TOOL_API_KEY }}
+          GIT_COMMIT_HASH: ${{ github.sha }}
+          AI_TOOL_KEY: ${{ secrets.AI_TOOL_KEY }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
-          STRIPE_LOGO_PRODUCT_ID: ${{ secrets.STRIPE_LOGO_PRODUCT_ID }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           MAILJET_API_KEY: ${{ secrets.MAILJET_API_KEY }}
@@ -134,13 +90,32 @@ jobs:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           LOKI_USERNAME: ${{ secrets.LOKI_USERNAME }}
           LOKI_PASSWORD: ${{ secrets.LOKI_PASSWORD }}
-          DATABASE_TRANSACTION_URL: ${{ secrets.DATABASE_TRANSACTION_URL }}
+          DB_TRANSACTION_URL: ${{ secrets.DB_TRANSACTION_URL }}
+        run: |
+          ssh -o StrictHostKeyChecking=no deploy@78.47.30.210 "
+            set -e
+
+            echo '${{ secrets.AI_TOOL_KEY }}' | docker secret create AI_TOOL_KEY_${{ github.sha }} -
+            echo '${{ secrets.FRONTEND_URL }}' | docker secret create FRONTEND_URL_${{ github.sha }} -
+            echo '${{ secrets.BACKEND_URL }}' | docker secret create BACKEND_URL_${{ github.sha }} -
+            echo '${{ secrets.REDIS_URL }}' | docker secret create REDIS_URL_${{ github.sha }} -
+            echo '${{ secrets.STRIPE_PUBLISHABLE_KEY }}' | docker secret create STRIPE_PUBLISHABLE_KEY_${{ github.sha }} -
+            echo '${{ secrets.STRIPE_SECRET_KEY }}' | docker secret create STRIPE_SECRET_KEY_${{ github.sha }} -
+            echo '${{ secrets.MAILJET_API_KEY }}' | docker secret create MAILJET_API_KEY_${{ github.sha }} -
+            echo '${{ secrets.MAILJET_API_SECRET }}' | docker secret create MAILJET_API_SECRET_${{ github.sha }} -
+            echo '${{ secrets.MAILJET_FROM_EMAIL }}' | docker secret create MAILJET_FROM_EMAIL_${{ github.sha }} -
+            echo '${{ secrets.MAILJET_TEMPLATE_ID }}' | docker secret create MAILJET_TEMPLATE_ID_${{ github.sha }} -
+            echo '${{ secrets.SENTRY_DSN }}' | docker secret create SENTRY_DSN_${{ github.sha }} -
+            echo '${{ secrets.LOKI_USERNAME }}' | docker secret create LOKI_USERNAME_${{ github.sha }} -
+            echo '${{ secrets.LOKI_PASSWORD }}' | docker secret create LOKI_PASSWORD_${{ github.sha }} -
+            echo '${{ secrets.DB_TRANSACTION_URL }}' | docker secret create DB_TRANSACTION_URL_${{ github.sha }} -
+          "
 
       - name: Docker Stack Deploy
         uses: cssnr/stack-deploy-action@v1
         with:
           name: ai-logo-generator
-          file: docker-stack.yaml
+          file: docker-stack.generated.yaml
           host: 78.47.30.210
           user: deploy
           ssh_key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}

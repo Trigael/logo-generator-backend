@@ -43,7 +43,7 @@ export class ImageGeneratorService {
 
         const headers = {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${getSecret(process.env.LOGO_GENERATOR_TOOL_API_KEY ?? '')}`
+            "Authorization": `Bearer ${getSecret(process.env.AI_TOOL_KEY ?? '')}`
         }
 
         const response = await firstValueFrom(

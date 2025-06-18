@@ -6,9 +6,9 @@ services:
       ports:
         - "4000:4000"
       secrets:
-        - LOGO_GENERATOR_TOOL_API_KEY
+        - AI_TOOL_KEY
       environment:
-        - LOGO_GENERATOR_TOOL_API_KEY=/run/secrets/LOGO_GENERATOR_TOOL_API_KEY
+        - AI_TOOL_KEY=/run/secrets/AI_TOOL_KEY
         - PORT=4000
         - NODE_ENV=production
       networks:
@@ -19,5 +19,5 @@ networks:
     external: true
 
 secrets:
-  LOGO_GENERATOR_TOOL_API_KEY:
+  AI_TOOL_KEY:
     external: true

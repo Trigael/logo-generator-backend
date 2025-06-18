@@ -4,50 +4,48 @@ services:
     ports:
       - "4000:4000"
     secrets:
-      - LOGO_GENERATOR_TOOL_API_KEY
-      - FRONTEND_URL
-      - BACKEND_URL
-      - REDIS_URL
+      - AI_TOOL_KEY_${GITHUB_SHA}
+      - FRONTEND_URL_${GITHUB_SHA}
+      - BACKEND_URL_${GITHUB_SHA}
+      - REDIS_URL_${GITHUB_SHA}
       # STRIPE
-      - STRIPE_LOGO_PRODUCT_ID
-      - STRIPE_PUBLISHABLE_KEY
-      - STRIPE_SECRET_KEY
+      - STRIPE_PUBLISHABLE_KEY_${GITHUB_SHA}
+      - STRIPE_SECRET_KEY_${GITHUB_SHA}
       # Mailjet
-      - MAILJET_API_KEY
-      - MAILJET_API_SECRET
-      - MAILJET_FROM_EMAIL
-      - MAILJET_TEMPLATE_ID
+      - MAILJET_API_KEY_${GITHUB_SHA}
+      - MAILJET_API_SECRET_${GITHUB_SHA}
+      - MAILJET_FROM_EMAIL_${GITHUB_SHA}
+      - MAILJET_TEMPLATE_ID_${GITHUB_SHA}
       # SENTRY
-      - SENTRY_DSN
+      - SENTRY_DSN_${GITHUB_SHA}
       # Grafana Loki
-      - LOKI_USERNAME
-      - LOKI_PASSWORD
+      - LOKI_USERNAME_${GITHUB_SHA}
+      - LOKI_PASSWORD_${GITHUB_SHA}
       # DB = SUPABASE
-      - DATABASE_TRANSACTION_URL
+      - DB_TRANSACTION_URL_${GITHUB_SHA}
     environment:
       - PORT=4000
       - NODE_ENV=production
-      - LOGO_GENERATOR_TOOL_API_KEY=/run/secrets/LOGO_GENERATOR_TOOL_API_KEY
-      - FRONTEND_URL=/run/secrets/FRONTEND_URL
-      - BACKEND_URL=/run/secrets/BACKEND_URL
-      - REDIS_URL=/run/secrets/REDIS_URL
+      - AI_TOOL_KEY=/run/secrets/AI_TOOL_KEY_${GITHUB_SHA}
+      - FRONTEND_URL=/run/secrets/FRONTEND_URL_${GITHUB_SHA}
+      - BACKEND_URL=/run/secrets/BACKEND_URL_${GITHUB_SHA}
+      - REDIS_URL=/run/secrets/REDIS_URL_${GITHUB_SHA}
       # STRIPE
-      - STRIPE_LOGO_PRODUCT_ID=/run/secrets/STRIPE_LOGO_PRODUCT_ID
-      - STRIPE_PUBLISHABLE_KEY=/run/secrets/STRIPE_PUBLISHABLE_KEY
-      - STRIPE_SECRET_KEY=/run/secrets/STRIPE_SECRET_KEY
+      - STRIPE_PUBLISHABLE_KEY=/run/secrets/STRIPE_PUBLISHABLE_KEY_${GITHUB_SHA}
+      - STRIPE_SECRET_KEY=/run/secrets/STRIPE_SECRET_KEY_${GITHUB_SHA}
       # Mailjet
-      - MAILJET_API_KEY=/run/secrets/MAILJET_API_KEY
-      - MAILJET_API_SECRET=/run/secrets/MAILJET_API_SECRET
-      - MAILJET_FROM_EMAIL=/run/secrets/MAILJET_FROM_EMAIL
+      - MAILJET_API_KEY=/run/secrets/MAILJET_API_KEY_${GITHUB_SHA}
+      - MAILJET_API_SECRET=/run/secrets/MAILJET_API_SECRET_${GITHUB_SHA}
+      - MAILJET_FROM_EMAIL=/run/secrets/MAILJET_FROM_EMAIL_${GITHUB_SHA}
       - MAILJET_FROM_NAME="AI LOGO GENERATOR"
-      - MAILJET_TEMPLATE_ID=/run/secrets/MAILJET_TEMPLATE_ID
+      - MAILJET_TEMPLATE_ID=/run/secrets/MAILJET_TEMPLATE_ID_${GITHUB_SHA}
       # Sentry
-      - SENTRY_DSN=/run/secrets/SENTRY_DSN
+      - SENTRY_DSN=/run/secrets/SENTRY_DSN_${GITHUB_SHA}
       # Grafana Loki
-      - LOKI_USERNAME=/run/secrets/LOKI_USERNAME
-      - LOKI_PASSWORD=/run/secrets/LOKI_PASSWORD
+      - LOKI_USERNAME=/run/secrets/LOKI_USERNAME_${GITHUB_SHA}
+      - LOKI_PASSWORD=/run/secrets/LOKI_PASSWORD_${GITHUB_SHA}
       # DB = SUPABASE
-      - DATABASE_TRANSACTION_URL=/run/secrets/DATABASE_TRANSACTION_URL
+      - DB_TRANSACTION_URL=/run/secrets/DB_TRANSACTION_URL_${GITHUB_SHA}
     deploy:
       replicas: 1
       update_config:
@@ -58,38 +56,36 @@ volumes:
   letsencrypt:
 
 secrets:
-  LOGO_GENERATOR_TOOL_API_KEY:
+  AI_TOOL_KEY_${GITHUB_SHA}:
     external: true
-  FRONTEND_URL:
+  FRONTEND_URL_${GITHUB_SHA}:
     external: true
-  BACKEND_URL:
+  BACKEND_URL_${GITHUB_SHA}:
     external: true
-  REDIS_URL:
+  REDIS_URL_${GITHUB_SHA}:
     external: true
   # STRIPE
-  STRIPE_LOGO_PRODUCT_ID:
+  STRIPE_PUBLISHABLE_KEY_${GITHUB_SHA}:
     external: true
-  STRIPE_PUBLISHABLE_KEY:
-    external: true
-  STRIPE_SECRET_KEY:
+  STRIPE_SECRET_KEY_${GITHUB_SHA}:
     external: true
   # MAILJET
-  MAILJET_API_KEY:
+  MAILJET_API_KEY_${GITHUB_SHA}:
     external: true
-  MAILJET_API_SECRET:
+  MAILJET_API_SECRET_${GITHUB_SHA}:
     external: true
-  MAILJET_FROM_EMAIL:
+  MAILJET_FROM_EMAIL_${GITHUB_SHA}:
     external: true
-  MAILJET_TEMPLATE_ID:
+  MAILJET_TEMPLATE_ID_${GITHUB_SHA}:
     external: true
   # SENTRY
-  SENTRY_DSN:
+  SENTRY_DSN_${GITHUB_SHA}:
     external: true
   # GRAFANA LOKI
-  LOKI_USERNAME:
+  LOKI_USERNAME_${GITHUB_SHA}:
     external: true
-  LOKI_PASSWORD:
+  LOKI_PASSWORD_${GITHUB_SHA}:
     external: true
   # DB
-  DATABASE_TRANSACTION_URL:
+  DB_TRANSACTION_URL_${GITHUB_SHA}:
     external: true
