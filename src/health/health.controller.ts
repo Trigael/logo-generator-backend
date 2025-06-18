@@ -6,7 +6,6 @@ import {
   HealthCheck,
   HealthCheckService,
   HttpHealthIndicator,
-  TypeOrmHealthIndicator,
   MemoryHealthIndicator,
   DiskHealthIndicator,
 } from '@nestjs/terminus';
@@ -17,7 +16,6 @@ export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
     private readonly http: HttpHealthIndicator,
-    private readonly db: TypeOrmHealthIndicator,
     private readonly memory: MemoryHealthIndicator,
     private readonly disk: DiskHealthIndicator,
     private readonly prismaHealth: PrismaHealthCheckService,
