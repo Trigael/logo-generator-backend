@@ -1,5 +1,4 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { SentryModule } from '@ntegral/nestjs-sentry';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -33,12 +32,6 @@ import { getSecret } from './utils/helpers.util';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, 
-    }),
-    SentryModule.forRoot({
-      dsn: getSecret(process.env.SENTRY_DSN ?? ''), 
-      debug: true, 
-      tracesSampleRate: 1.0, 
-      enabled: getSecret(process.env.NODE_ENV ?? '') == 'production',
     }),
     LogoModule, 
     HttpModule,

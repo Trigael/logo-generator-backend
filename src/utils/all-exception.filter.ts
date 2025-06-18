@@ -1,16 +1,13 @@
-// all-exceptions.filter.ts
 import { Catch, ArgumentsHost, ExceptionFilter } from '@nestjs/common';
-import { SentryService } from '@ntegral/nestjs-sentry';
+import * as Sentry from '@sentry/node';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(private readonly sentryService: SentryService) {}
-
   catch(exception: any, host: ArgumentsHost) {
-    // Send exception to Sentry
-    this.sentryService.instance().captureException(exception);
+    // Report to Sentry přímo
+    Sentry.captureException(exception);
 
-    // Usual Nest error response logic here
+    // Response handling (stejné jako předtím)
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
     const status = exception.getStatus?.() ?? 500;

@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/dreamsofcode-io/ai-logo-generator:${GIT_COMMIT_HASH:-latest}
+    image: ghcr.io/trigael/ai-logo-generator:${GIT_COMMIT_HASH:-latest}
     secrets:
       - LOGO_GENERATOR_TOOL_API_KEY
       - FRONTEND_URL

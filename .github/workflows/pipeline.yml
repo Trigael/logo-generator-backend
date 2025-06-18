@@ -6,6 +6,7 @@ on:
       - "main"
 
 permissions:
+  contents: read
   packages: write
 
 jobs:
@@ -42,8 +43,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/dreamsofcode-io/ai-logo-generator:latest
-            ghcr.io/dreamsofcode-io/ai-logo-generator:${{ github.sha }}
+            ghcr.io/trigael/ai-logo-generator:latest
+            ghcr.io/trigael/ai-logo-generator:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest

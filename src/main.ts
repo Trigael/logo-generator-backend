@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { SentryService } from '@ntegral/nestjs-sentry';
+import * as Sentry from '@sentry/node';
 import * as express from 'express';
 
 // Filters
@@ -56,9 +56,16 @@ async function bootstrap() {
   app.use(sessionMiddleware.use.bind(sessionMiddleware));
   app.use(connectSessionMiddleware.use.bind(connectSessionMiddleware));
 
+  // Sentry init
+  Sentry.init({
+    dsn: getSecret(process.env.SENTRY_DSN ?? ''),
+    tracesSampleRate: 1.0,
+    environment: process.env.NODE_ENV ?? 'development',
+  });
+
   // Handles all Exceptions | + Sentry, Logger
-  app.useGlobalFilters(new HttpExceptionFilter()); 
-  app.useGlobalFilters(new AllExceptionsFilter(app.get(SentryService)));
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalFilters(new AllExceptionsFilter()); 
   
   await app.listen(port,() => {
     console.log(`API running at Port: ${port} in mode: ${getSecret(process.env.NODE_ENV ?? '')}`)
