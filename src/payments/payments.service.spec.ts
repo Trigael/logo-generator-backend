@@ -11,6 +11,11 @@ import { Payment_states } from '@prisma/client';
 import Stripe from 'stripe';
 import { QueueService } from 'src/queue/queue.service';
 
+jest.mock('src/utils/helpers.util', () => ({
+  getSecret: jest.fn((v: string) => v || 'mock-secret'),
+  getCurrencySymbol: jest.fn(() => '$'), 
+}));
+
 const mockPayment = {
   id_payment: 1,
   order_id: 1,
@@ -96,7 +101,17 @@ describe('PaymentsService', () => {
       checkout: {
         sessions: {
           retrieve: retrieveMock,
+          create: jest.fn().mockResolvedValue({
+            url: 'https://mock-stripe.com/payment',
+            id: 'stripe-session-id',
+          }),
         },
+      },
+      webhooks: {
+        constructEvent: jest.fn().mockReturnValue({
+          type: 'checkout.session.completed',
+          data: { object: { id: 'stripe-session-id' } },
+        }),
       },
     } as any;
   });

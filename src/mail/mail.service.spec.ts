@@ -4,6 +4,11 @@ import { PaymentsService } from 'src/payments/payments.service';
 import { UsersService } from 'src/users/users.service';
 import { LogoService } from 'src/logo/logo.service';
 
+jest.mock('src/utils/helpers.util', () => ({
+  getSecret: jest.fn((v: string) => v || 'mock-secret'),
+  getCurrencySymbol: jest.fn(() => '$'), 
+}));
+
 describe('MailService', () => {
   let service: MailService;
 
