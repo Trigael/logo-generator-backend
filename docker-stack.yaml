@@ -1,0 +1,18 @@
+services:
+  web:
+    image: ghcr.io/dreamsofcode-io/ai-logo-generator:${GIT_COMMIT_HASH:-latest}
+    secrets:
+      - LOGO_GENERATOR_TOOL_API_KEY
+    environment:
+      - LOGO_GENERATOR_TOOL_API_KEY=/run/secrets/LGT_API_KEY
+    deploy:
+      update_config:
+        order: start-first
+
+volumes:
+  db-data:
+  letsencrypt:
+
+secrets:
+  LOGO_GENERATOR_TOOL_API_KEY:
+    external: true

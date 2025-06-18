@@ -5,8 +5,10 @@ services:
         dockerfile: dockerfile
       ports:
         - "4000:4000"
+      secrets:
+        - LOGO_GENERATOR_TOOL_API_KEY
       environment:
-        - LOGO_GENERATOR_TOOL_API_KEY=${LOGO_GENERATOR_TOOL_API_KEY}
+        - LOGO_GENERATOR_TOOL_API_KEY=/run/secrets/LOGO_GENERATOR_TOOL_API_KEY
         - PORT=4000
         - NODE_ENV=production
       networks:
@@ -14,4 +16,8 @@ services:
 
 networks:
   caddy-shared:
+    external: true
+
+secrets:
+  LOGO_GENERATOR_TOOL_API_KEY:
     external: true
