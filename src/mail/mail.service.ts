@@ -4,6 +4,7 @@ import { LogoService } from 'src/logo/logo.service';
 import { PaymentsService } from 'src/payments/payments.service';
 import { UsersService } from 'src/users/users.service';
 import { InternalErrorException } from 'src/utils/exceptios';
+import { getSecret } from 'src/utils/helpers.util';
 
 @Injectable()
 export class MailService {
@@ -18,8 +19,8 @@ export class MailService {
         private readonly logoService: LogoService,
     ) {
       this.mailjet = Client.apiConnect(
-        process.env.MAILJET_API_KEY ?? '', 
-        process.env.MAILJET_API_SECRET ?? '' 
+        getSecret(process.env.MAILJET_API_KEY ?? ''), 
+        getSecret(process.env.MAILJET_API_SECRET ?? '' )
       );
     }
     
@@ -31,8 +32,8 @@ export class MailService {
                     Messages: [
                         {
                             From: {
-                                Email: process.env.MAILJET_FROM_EMAIL,
-                                Name: process.env.MAILJET_FROM_NAME ?? 'AI Logo Creator',
+                                Email: getSecret(process.env.MAILJET_FROM_EMAIL ?? ''),
+                                Name: getSecret(process.env.MAILJET_FROM_NAME ?? '') ?? 'AI Logo Creator',
                             },
                             To: [{ Email: to,
                               Name: 'Příjemce'
@@ -66,7 +67,7 @@ export class MailService {
         return this.sendEmail(
             user.email,
             `[${payment.id_payment}] Potvrzení platby`,
-            Number(process.env.MAILJET_TEMPLATE_ID),
+            Number(getSecret(process.env.MAILJET_TEMPLATE_ID ?? '')),
             {
                 logo_url: `PLACEHOLDER_URL/LOGO`,
             }

@@ -3,8 +3,49 @@ services:
     image: ghcr.io/dreamsofcode-io/ai-logo-generator:${GIT_COMMIT_HASH:-latest}
     secrets:
       - LOGO_GENERATOR_TOOL_API_KEY
+      - FRONTEND_URL
+      - BACKEND_URL
+      - REDIS_URL
+      # STRIPE
+      - STRIPE_LOGO_PRODUCT_ID
+      - STRIPE_PUBLISHABLE_KEY
+      - STRIPE_SECRET_KEY
+      # Mailjet
+      - MAILJET_API_KEY
+      - MAILJET_API_SECRET
+      - MAILJET_FROM_EMAIL
+      - MAILJET_TEMPLATE_ID
+      # SENTRY
+      - SENTRY_DSN
+      # Grafana Loki
+      - LOKI_USERNAME
+      - LOKI_PASSWORD
+      # DB = SUPABASE
+      - DATABASE_TRANSACTION_URL
     environment:
-      - LOGO_GENERATOR_TOOL_API_KEY=/run/secrets/LGT_API_KEY
+      - PORT=4000
+      - NODE_ENV=production
+      - LOGO_GENERATOR_TOOL_API_KEY=/run/secrets/LOGO_GENERATOR_TOOL_API_KEY
+      - FRONTEND_URL=/run/secrets/FRONTEND_URL
+      - BACKEND_URL=/run/secrets/BACKEND_URL
+      - REDIS_URL=/run/secrets/REDIS_URL
+      # STRIPE
+      - STRIPE_LOGO_PRODUCT_ID=/run/secrets/STRIPE_LOGO_PRODUCT_ID
+      - STRIPE_PUBLISHABLE_KEY=/run/secrets/STRIPE_PUBLISHABLE_KEY
+      - STRIPE_SECRET_KEY=/run/secrets/STRIPE_SECRET_KEY
+      # Mailjet
+      - MAILJET_API_KEY=/run/secrets/MAILJET_API_KEY
+      - MAILJET_API_SECRET=/run/secrets/MAILJET_API_SECRET
+      - MAILJET_FROM_EMAIL=/run/secrets/MAILJET_FROM_EMAIL
+      - MAILJET_FROM_NAME="AI LOGO GENERATOR"
+      - MAILJET_TEMPLATE_ID=/run/secrets/MAILJET_TEMPLATE_ID
+      # Sentry
+      - SENTRY_DSN=/run/secrets/SENTRY_DSN
+      # Grafana Loki
+      - LOKI_USERNAME=/run/secrets/LOKI_USERNAME
+      - LOKI_PASSWORD=/run/secrets/LOKI_PASSWORD
+      # DB = SUPABASE
+      - DATABASE_TRANSACTION_URL=/run/secrets/DATABASE_TRANSACTION_URL
     deploy:
       update_config:
         order: start-first
@@ -15,4 +56,37 @@ volumes:
 
 secrets:
   LOGO_GENERATOR_TOOL_API_KEY:
+    external: true
+  FRONTEND_URL:
+    external: true
+  BACKEND_URL:
+    external: true
+  REDIS_URL:
+    external: true
+  # STRIPE
+  STRIPE_LOGO_PRODUCT_ID:
+    external: true
+  STRIPE_PUBLISHABLE_KEY:
+    external: true
+  STRIPE_SECRET_KEY:
+    external: true
+  # MAILJET
+  MAILJET_API_KEY:
+    external: true
+  MAILJET_API_SECRET:
+    external: true
+  MAILJET_FROM_EMAIL:
+    external: true
+  MAILJET_TEMPLATE_ID:
+    external: true
+  # SENTRY
+  SENTRY_DSN:
+    external: true
+  # GRAFANA LOKI
+  LOKI_USERNAME:
+    external: true
+  LOKI_PASSWORD:
+    external: true
+  # DB
+  DATABASE_TRANSACTION_URL:
     external: true

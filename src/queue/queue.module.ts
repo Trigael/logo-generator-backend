@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { QueueService } from './queue.service';
 import { LoggerModule } from 'src/logger/logger.module';
+import { getSecret } from 'src/utils/helpers.util';
 
 @Module({
   imports: [
     BullModule.forRoot({
       connection: {
-        url: process.env.REDIS_URL,
+        url: getSecret(process.env.REDIS_URL ?? ''),
       },
     }),
     BullModule.registerQueue({ name: 'mailQueue' }),

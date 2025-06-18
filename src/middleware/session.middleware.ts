@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 // Services
 import { SessionsService } from 'src/sessions/sessions.service';
 import { RequestContextService } from 'src/common/request-context.service';
+import { getSecret } from 'src/utils/helpers.util';
 
 @Injectable()
 export class SessionMiddleware implements NestMiddleware {
@@ -15,7 +16,7 @@ export class SessionMiddleware implements NestMiddleware {
 ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
-    let sessionId = process.env.NODE_ENV == 'production' ? req.cookies?.session_id : 'dev_session'
+    let sessionId = getSecret(process.env.NODE_ENV ?? '') == 'production' ? req.cookies?.session_id : 'dev_session'
     let session: Sessions | null = null;
     
     if (sessionId) {

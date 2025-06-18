@@ -16,6 +16,7 @@ import { UsersService } from 'src/users/users.service';
 import { OrdersService } from 'src/orders/orders.service';
 import { Order_item } from 'src/utils/types.util';
 import { ProductTypesService } from 'src/product_types/product_types.service';
+import { getSecret } from 'src/utils/helpers.util';
 
 @Injectable()
 export class LogoService {
@@ -142,7 +143,7 @@ export class LogoService {
 
     // #region PRIVATE FUNCTIONS
     private async _findStripeProductPrice(product_id, currency) {
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
+        const stripe = new Stripe(getSecret(process.env.STRIPE_SECRET_KEY ?? ''));
         const userCurrency = currency?.toLowerCase() ?? "eur"; // from user, fallback to EUR
 
         const prices = await stripe.prices.list({ product: product_id ?? 'prod_SQL6Q8xF7BtwwO' });

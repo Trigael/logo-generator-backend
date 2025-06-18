@@ -1,11 +1,12 @@
 import Transport = require('winston-transport');
 import type { TransportStreamOptions } from 'winston-transport';
 import axios from 'axios';
+import { getSecret } from 'src/utils/helpers.util';
 
 export class LokiTransport extends Transport {
   private readonly lokiUrl = 'https://logs-prod-012.grafana.net/loki/api/v1/push';
-  private readonly username = process.env.LOKI_USERNAME!;
-  private readonly password = process.env.LOKI_PASSWORD!;
+  private readonly username = getSecret(process.env.LOKI_USERNAME!);
+  private readonly password = getSecret(process.env.LOKI_PASSWORD!);
 
   private lastSendTime = 0;
   private isSending = false;

@@ -27,6 +27,7 @@ import { CommonModule } from './common/common.module';
 import { QueueModule } from './queue/queue.module';
 import { CronsModule } from './crons/crons.module';
 import { HealthModule } from './health/health.module';
+import { getSecret } from './utils/helpers.util';
 
 @Module({
   imports: [
@@ -34,10 +35,10 @@ import { HealthModule } from './health/health.module';
       isGlobal: true, 
     }),
     SentryModule.forRoot({
-      dsn: process.env.SENTRY_DSN ?? '', 
+      dsn: getSecret(process.env.SENTRY_DSN ?? ''), 
       debug: true, 
       tracesSampleRate: 1.0, 
-      enabled: process.env.NODE_ENV == 'production',
+      enabled: getSecret(process.env.NODE_ENV ?? '') == 'production',
     }),
     LogoModule, 
     HttpModule,

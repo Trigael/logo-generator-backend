@@ -16,10 +16,11 @@ import { UsersService } from './users/users.service';
 // Middleware
 import { SessionMiddleware } from './middleware/session.middleware';
 import { ConnectSessionMiddleware } from './middleware/connect-session.middleware';
+import { getSecret } from './utils/helpers.util';
 
 
 async function bootstrap() {
-  const port = process.env.PORT ?? 3000;
+  const port = getSecret(process.env.PORT ?? '') ?? 3000;
   const app = await NestFactory.create(AppModule);
 
   const sessionService = app.get(SessionsService);
@@ -60,7 +61,7 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter(app.get(SentryService)));
   
   await app.listen(port,() => {
-    console.log(`API running at Port: ${port} in mode: ${process.env.NODE_ENV}`)
+    console.log(`API running at Port: ${port} in mode: ${getSecret(process.env.NODE_ENV ?? '')}`)
   });
 }
 bootstrap();

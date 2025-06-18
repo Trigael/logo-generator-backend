@@ -14,7 +14,7 @@ import { Order_item } from 'src/utils/types.util';
 import { UsersService } from 'src/users/users.service';
 import { InternalErrorException } from 'src/utils/exceptios';
 import { OrdersService } from 'src/orders/orders.service';
-import { getCurrencySymbol } from 'src/utils/helpers.util';
+import { getCurrencySymbol, getSecret } from 'src/utils/helpers.util';
 import { LoggerService } from 'src/logger/logger.service';
 import { QueueService } from 'src/queue/queue.service';
 import { tryCatch } from 'bullmq';
@@ -37,7 +37,7 @@ export class PaymentsService {
         @Inject(forwardRef(() => OrdersService))
         private readonly ordersService: OrdersService,
     ) {
-        this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '');
+        this.stripe = new Stripe(getSecret(process.env.STRIPE_SECRET_KEY ?? ''));
     }
 
     async getPayment(payment_id: number) {
@@ -181,7 +181,7 @@ export class PaymentsService {
     async webhookForStripe(body: any, req: any) {
         const sig = req.headers['stripe-signature'];
         const event = this.stripe.webhooks.constructEvent(
-          body, sig, process.env.STRIPE_WEBHOOK_SECRET ?? ''
+          body, sig, getSecret(process.env.STRIPE_WEBHOOK_SECRET ?? '')
         );
     
         if (event.type === 'checkout.session.completed') {
@@ -214,8 +214,8 @@ export class PaymentsService {
               mode: 'payment',
               line_items: products,
               customer_email: email,
-              success_url: `${process.env.FRONTEND_URL}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
-              cancel_url: `${process.env.FRONTEND_URL}/payment-cancelled`,
+              success_url: `${getSecret(process.env.FRONTEND_URL ?? '')}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${getSecret(process.env.FRONTEND_URL ?? '')}/payment-cancelled`,
               // metadata: { ... } // add order id etc. if needed
             });
 

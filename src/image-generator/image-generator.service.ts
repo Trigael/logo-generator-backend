@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { GenerateLogoDto } from 'src/logo/dto/generate-logo.dto';
 import { PromptsService } from 'src/prompts/prompts.service';
+import { getSecret } from 'src/utils/helpers.util';
 
 // DALL-E Docs: https://platform.openai.com/docs/api-reference/images/create
 
@@ -42,7 +43,7 @@ export class ImageGeneratorService {
 
         const headers = {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${process.env.LOGO_GENERATOR_TOOL_API_KEY}`
+            "Authorization": `Bearer ${getSecret(process.env.LOGO_GENERATOR_TOOL_API_KEY ?? '')}`
         }
 
         const response = await firstValueFrom(

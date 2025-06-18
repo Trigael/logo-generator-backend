@@ -9,6 +9,7 @@ import { sanitizeLogData } from './sanitize-log.util';
 
 // Services
 import { RequestContextService } from 'src/common/request-context.service';
+import { getSecret } from 'src/utils/helpers.util';
 
 interface LogOptions {
   context?: string;
@@ -17,7 +18,7 @@ interface LogOptions {
   metadata?: Record<string, any>;
 }
 
-const isSanitizationEnabled = () => process.env.SANITIZE_LOGS === 'true';
+const isSanitizationEnabled = () => getSecret(process.env.SANITIZE_LOGS ?? '') === 'true';
 
 @Injectable()
 export class LoggerService {
