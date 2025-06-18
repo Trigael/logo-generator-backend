@@ -1,6 +1,8 @@
 services:
   web:
     image: ghcr.io/trigael/ai-logo-generator:${GIT_COMMIT_HASH:-latest}
+    ports:
+      - "4000:4000"
     secrets:
       - LOGO_GENERATOR_TOOL_API_KEY
       - FRONTEND_URL
@@ -47,6 +49,7 @@ services:
       # DB = SUPABASE
       - DATABASE_TRANSACTION_URL=/run/secrets/DATABASE_TRANSACTION_URL
     deploy:
+      replicas: 1
       update_config:
         order: start-first
 
