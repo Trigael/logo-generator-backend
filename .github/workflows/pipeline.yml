@@ -59,7 +59,7 @@ jobs:
 
       - name: Push Docker secrets to server
         run: |
-          ssh -o StrictHostKeyChecking=no deploy@ai-logo-generator.site << 'EOF'
+          ssh -o StrictHostKeyChecking=no deploy@78.47.30.210 << 'EOF'
             set -e
 
             docker secret rm LOGO_GENERATOR_TOOL_API_KEY 2>/dev/null || true
@@ -129,7 +129,7 @@ jobs:
         with:
           name: ai-logo-generator
           file: docker-stack.yaml
-          host: ai-logo-generator.site
+          host: 78.47.30.210
           user: deploy
           ssh_key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
           env_file: ./envfile
