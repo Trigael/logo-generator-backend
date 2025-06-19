@@ -134,7 +134,8 @@ jobs:
             SHORT_SHA_SAFE=${{ github.sha }}
           script: |
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ghcr.io/trigael/ai-logo-generator:$SHORT_SHA
+            echo "TAG = $github.sha"
+            docker pull ghcr.io/trigael/ai-logo-generator:latest
 
             SHORT_SHA_SAFE=$(echo $SHORT_SHA | cut -c1-12)
             export GIT_COMMIT_HASH="${{ github.sha }}"
