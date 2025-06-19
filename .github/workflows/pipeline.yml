@@ -98,20 +98,20 @@ jobs:
             echo "🔍 SHORT_SHA_SAFE = $SHORT_SHA_SAFE"
             echo "🔍 AI_TOOL_KEY = ${{secrets.AI_TOOL_KEY}}"
 
-            echo "${{ secrets.AI_TOOL_KEY }}" | docker secret create AI_TOOL_KEY_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.FRONTEND_URL }}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.BACKEND_URL }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.REDIS_URL }}" | docker secret create REDIS_URL_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.STRIPE_PUBLISHABLE_KEY }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.STRIPE_SECRET_KEY }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.MAILJET_API_KEY }}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.MAILJET_API_SECRET }}" | docker secret create MAILJET_API_SECRET_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.MAILJET_FROM_EMAIL }}" | docker secret create MAILJET_FROM_EMAIL_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.MAILJET_TEMPLATE_ID }}" | docker secret create MAILJET_TEMPLATE_ID_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.SENTRY_DSN }}" | docker secret create SENTRY_DSN_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.LOKI_USERNAME }}" | docker secret create LOKI_USERNAME_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.LOKI_PASSWORD }}" | docker secret create LOKI_PASSWORD_$SHORT_SHA_SAFE || true
-            echo "${{ secrets.DB_TRANSACTION_URL }}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE || true
+            echo -n "${{ secrets.AI_TOOL_KEY }}" | docker secret create AI_TOOL_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.FRONTEND_URL }}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.BACKEND_URL }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.REDIS_URL }}" | docker secret create REDIS_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.STRIPE_PUBLISHABLE_KEY }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.STRIPE_SECRET_KEY }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.MAILJET_API_KEY }}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.MAILJET_API_SECRET }}" | docker secret create MAILJET_API_SECRET_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.MAILJET_FROM_EMAIL }}" | docker secret create MAILJET_FROM_EMAIL_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.MAILJET_TEMPLATE_ID }}" | docker secret create MAILJET_TEMPLATE_ID_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.SENTRY_DSN }}" | docker secret create SENTRY_DSN_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.LOKI_USERNAME }}" | docker secret create LOKI_USERNAME_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.LOKI_PASSWORD }}" | docker secret create LOKI_PASSWORD_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.DB_TRANSACTION_URL }}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE -
 
       - name: Upload docker-stack.yaml to VPS
         uses: appleboy/scp-action@master
@@ -143,18 +143,11 @@ jobs:
             echo "Generating stack file with GIT_COMMIT_HASH=$GIT_COMMIT_HASH"
             envsubst '${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
 
-            echo "🔧 GIT_COMMIT_HASH=$GIT_COMMIT_HASH"
-            echo "🔧 SHORT_SHA_SAFE=$SHORT_SHA_SAFE"
-            cat ~/docker-stack.generated.yaml
-
-
             echo "Deploying docker stack..."
             docker stack deploy -c ~/docker-stack.generated.yaml ai-logo-generator
 
             echo "📦 Available Docker secrets:"
             docker secret ls
-
-            cat ~/docker-stack.generated.yaml
 
 
 
