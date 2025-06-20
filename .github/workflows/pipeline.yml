@@ -146,13 +146,25 @@ jobs:
             echo "Generating stack file with GIT_COMMIT_HASH=$GIT_COMMIT_HASH"
             envsubst '${DB_URL_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
 
-            echo "Deploying docker stack..."
+            echo "📦 Deploying docker stack..."
             docker stack deploy -c ~/docker-stack.generated.yaml ai-logo-generator
 
-            echo "📦 Available Docker secrets:"
-            docker secret ls
-
-
+      - name: Deploy docker stack
+        uses: appleboy/ssh-action@master
+        with:
+          host: 78.47.30.210
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: 22
+          envs: 
+            GIT_COMMIT_HASH=${{ github.sha }}
+            SHORT_SHA_SAFE=${{ github.sha }}
+          script: |
+            echo "🧼 Deleting all old Docker secrets..."
+            docker secret ls -q | xargs -r docker secret rm
+                      
+            echo "🧼 Deleting all unused Docker image..."
+            docker image prune -a -f
 
       # - name: Test SSH connection
       #   run: ssh -o StrictHostKeyChecking=no deploy@78.47.30.210 "docker pull ghcr.io/trigael/ai-logo-generator:${{ github.sha }}"
