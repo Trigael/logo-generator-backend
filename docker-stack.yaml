@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/trigael/ai-logo-generator:latest
+    image: ghcr.io/trigael/ai-logo-generator:${GIT_COMMIT_HASH}
     ports:
       - "4000:4000"
     secrets:

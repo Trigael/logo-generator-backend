@@ -135,12 +135,13 @@ jobs:
           script: |
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             echo "TAG = $github.sha"
-            docker pull ghcr.io/trigael/ai-logo-generator:latest
-
+            
             SHORT_SHA_SAFE=$(echo $SHORT_SHA | cut -c1-12)
             export DB_URL_KEY="${{ secrets.DB_TRANSACTION_URL }}"
             export GIT_COMMIT_HASH="${{ github.sha }}"
             export SHORT_SHA_SAFE=$(echo "${{ github.sha }}" | cut -c1-12)
+
+            docker pull ghcr.io/trigael/ai-logo-generator:$GIT_COMMIT_HASH
    
             echo "Generating stack file with GIT_COMMIT_HASH=$GIT_COMMIT_HASH"
             envsubst '${DB_URL_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
