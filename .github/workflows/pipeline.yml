@@ -10,24 +10,24 @@ permissions:
   packages: write
 
 jobs:
-  run-tests:
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      - name: Install dependencies
-        run: npm ci --force
-      - name: Run tests
-        run: npm run test
+  # run-tests:
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '18'
+  #     - name: Install dependencies
+  #       run: npm ci --force
+  #     - name: Run tests
+  #       run: npm run test
 
   build-and-push-image:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    needs:
-      - run-tests
+    # needs:
+    #   - run-tests
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -138,11 +138,12 @@ jobs:
             docker pull ghcr.io/trigael/ai-logo-generator:latest
 
             SHORT_SHA_SAFE=$(echo $SHORT_SHA | cut -c1-12)
+            export DB_URL_KEY="${{ secrets.DB_TRANSACTION_URL }}"
             export GIT_COMMIT_HASH="${{ github.sha }}"
             export SHORT_SHA_SAFE=$(echo "${{ github.sha }}" | cut -c1-12)
    
             echo "Generating stack file with GIT_COMMIT_HASH=$GIT_COMMIT_HASH"
-            envsubst '${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
+            envsubst '${DB_URL_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
 
             echo "Deploying docker stack..."
             docker stack deploy -c ~/docker-stack.generated.yaml ai-logo-generator

@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/trigael/ai-logo-generator:${GIT_COMMIT_HASH}
+    image: ghcr.io/trigael/ai-logo-generator:latest
     ports:
       - "4000:4000"
     secrets:
@@ -45,7 +45,7 @@ services:
       - LOKI_USERNAME=/run/secrets/LOKI_USERNAME_${SHORT_SHA_SAFE}
       - LOKI_PASSWORD=/run/secrets/LOKI_PASSWORD_${SHORT_SHA_SAFE}
       # DB = SUPABASE
-      - DB_TRANSACTION_URL=/run/secrets/DB_TRANSACTION_URL_${SHORT_SHA_SAFE}
+      - DB_TRANSACTION_URL=${DB_URL_KEY}
     deploy:
       replicas: 1
       update_config:
