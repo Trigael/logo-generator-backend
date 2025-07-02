@@ -6,12 +6,16 @@ import { getSecret } from 'src/utils/helpers.util';
 
 @Module({
   imports: [
-    BullModule.forRoot({
-      connection: {
-        url: getSecret(process.env.REDIS_URL ?? ''),
-      },
-    }),
-    BullModule.registerQueue({ name: 'mailQueue' }),
+    ...(process.env.NODE_ENV === 'dev'
+    ? []
+    : [
+        BullModule.forRoot({
+          connection: {
+            url: getSecret(process.env.REDIS_URL ?? ''),
+          },
+        }),
+        BullModule.registerQueue({ name: 'mailQueue' }),
+      ]),
     
     LoggerModule,
   ],
