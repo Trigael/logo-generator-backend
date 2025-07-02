@@ -102,7 +102,6 @@ export class LogoService {
       // TODO: Config amount
       const response = await this.imageGenerator.generateLogoWitchChatGPTPrompts(body, 1)
       
-      console.log(response.data[0].url[0])
       for(let i = 0; i < response.data.length; i++) {
           // Save picture into DB
           const logo: Prompted_logos = await this.createPromptedLogo({

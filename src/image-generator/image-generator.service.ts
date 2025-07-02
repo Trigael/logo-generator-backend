@@ -84,12 +84,17 @@ export class ImageGeneratorService {
         }
         
         // Creating prompts for Flux through ChatGPT
-        // const response = await this._callToChatGPTApi(prompt.whole_prompt)
-        const response = ChatGPT_propmts_creation_response // example response
+        const response = await this._callToChatGPTApi(prompt.whole_prompt)
+        // const response = ChatGPT_propmts_creation_response // example response
 
         // Retrieving each prompt for Flux
-        const content = response.choices[0].message.content;
-        const prompts_array = JSON.parse(content);
+        const rawContent = response.choices[0].message.content;
+        const cleaned = rawContent
+          .trim()
+          .replace(/\n/g, '')    
+          .replace(/\t/g, '')    
+
+        const prompts_array = JSON.parse(cleaned);
 
         // Generating images through Flux
         const generated_imgs = await this._generateThroughFlux1Dev(prompts_array)
@@ -134,6 +139,21 @@ export class ImageGeneratorService {
     async _generateThroughFlux1Dev(prompts: string[]): Promise<string[]> {
         const results: string[] = [];
 
+        const response = await firstValueFrom(
+          this.httpService.post(
+            'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev',
+            { inputs: prompts[0] },
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.HF_API_KEY}`,
+                'Content-Type': 'application/json',
+                'Accept': 'image/png',
+              },
+              responseType: 'arraybuffer',
+            }
+          )
+        );
+
         for (const prompt of prompts) {
           try {
             const response = await firstValueFrom(
@@ -144,18 +164,19 @@ export class ImageGeneratorService {
                   headers: {
                     Authorization: `Bearer ${process.env.HF_API_KEY}`,
                     'Content-Type': 'application/json',
-                    'Accept': 'image/png'
+                    'Accept': 'image/png',
                   },
-                  responseType: 'arraybuffer'
+                  responseType: 'arraybuffer',
+                  timeout: 120_000
                 }
               )
             );
 
             const base64 = Buffer.from(response.data, 'binary').toString('base64');
             results.push(`data:image/png;base64,${base64}`);
-          } catch (err) {
-            console.error('Image generation failed for prompt:', prompt, '. With Error: ', err);
-            results.push(''); 
+          } catch  {
+            console.error('Image generation failed for prompt:', prompt);
+            results.push(''); // nebo nějaká náhradní hodnota
           }
         }
 
