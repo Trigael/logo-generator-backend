@@ -1,6 +1,8 @@
 /* eslint-disable prettier/prettier */
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
+import * as fs from 'fs';
+import * as path from 'path';
 
 // DTOs
 import { GenerateLogoDto } from './dto/generate-logo.dto';
@@ -65,6 +67,8 @@ export class LogoService {
 
       targetDate.setDate(targetDate.getDate() - days);
 
+      // TODO: delete from files
+
       return await this.db.prompted_logos.deleteMany({
         where: {
           created_at: {
@@ -112,6 +116,20 @@ export class LogoService {
         return response;
     }
 
+    async updatePromptedLogo(id: number, data: Prisma.Prompted_logosUpdateInput) {
+      return await this.db.prompted_logos.update({ 
+        where: { id_prompted_logo: id },
+        data: data
+      })
+    }
+
+    async updateArchivedLogo(id: number, data: Prisma.Archived_logosUpdateInput) {
+      return await this.db.archived_logos.update({ 
+        where: { id_archived_logo: id },
+        data: data
+      })
+    }
+
     async buyLogo(body: BuyLogoDto) {
         // Get info for existing user or create new user
         let user: Users = await this.usersService.getOrCreateGuestUser(body.email)
@@ -126,6 +144,7 @@ export class LogoService {
         // Format logo_ids into order_items
         for(let i = 0; i < body.logo_ids.length; i++) {
           const archived_logo = await this.getOrCreateArchivedLogo(body.logo_ids[i])
+          
           order_item.push({
             product_type_id: prompted_logo?.id_product_type ?? 1,
             product_type_name: prompted_logo?.name ?? '',
@@ -133,6 +152,9 @@ export class LogoService {
             price: prompted_logo_price?.amount_cents ?? 0,
             product_id: archived_logo.id_archived_logo
           })
+
+          // Move logo to 'Archived' file
+          this.moveLogotoArchived(body.logo_ids[i], archived_logo.id_archived_logo)
         }
         
         // Create order
@@ -146,6 +168,26 @@ export class LogoService {
         )
 
         return payment
+    }
+
+    async moveLogotoArchived(prompted_logo_id: number, archived_logo_id: number) {
+      // Move generated logos into archived logos file
+      const logo_info = await this.getPromptedLogo(prompted_logo_id)
+        
+      if(logo_info?.filepath_to_logo) {
+        const oldPath = path.join(__dirname, `public${logo_info.filepath_to_logo}`);
+        const newPath = path.join(__dirname, `public/archived/${path.basename(logo_info.filepath_to_logo).replace('generated_', 'archived_')}`);
+                  
+        // Checking that target folder exists
+        fs.mkdirSync(path.dirname(newPath), { recursive: true });
+                  
+        // Move file with renaming
+        fs.renameSync(oldPath, newPath);
+
+        // Update filepath of logo
+        await this.updatePromptedLogo(prompted_logo_id, { filepath_to_logo: '' })
+        await this.updateArchivedLogo(archived_logo_id, { filepath: `/archived/${path.basename(logo_info.filepath_to_logo).replace('generated_', 'archived_')}` })
+      }
     }
 
     // async getLogosURLs(logo_ids: number[]) {
