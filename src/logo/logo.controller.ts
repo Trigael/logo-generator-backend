@@ -21,7 +21,8 @@ export class LogoController {
 
   @Post('generate')
   generateLogo(@Headers('x-session-id') session_id: string, @Body() body: GenerateLogoDto) {
-    return this.logoService.generateLogo(body, session_id);
+    // return this.logoService.generateLogo(body, session_id);
+    return this.logoService.generateLogoWithPromptRefactoring(body, session_id)
   }
 
   @Post('buy')

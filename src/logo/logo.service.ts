@@ -76,7 +76,8 @@ export class LogoService {
     }
 
     async generateLogo(body: GenerateLogoDto, session_id?: string) {
-        const response = await this.imageGenerator.generateLogo(body)
+        // TODO: Config amount
+        const response = await this.imageGenerator.generateLogo(body, 1)
         const now = new Date()
 
         for(let i = 0; i < response.data.length; i++) {
@@ -85,6 +86,24 @@ export class LogoService {
             prompt: { connect: { id_prompt: response.prompt.id_prompt}},
             url_to_logo: response.data[i].url,
             url_valid_to: new Date(now.getTime() + 60 * 60 * 1000)
+          })
+
+          response.data[i].id = logo.id_prompted_logo
+        }
+
+        return response;
+    }
+
+    async generateLogoWithPromptRefactoring(body: GenerateLogoDto, session_id?: string) {
+      // TODO: Config amount
+      const response = await this.imageGenerator.generateLogoWitchChatGPTPrompts(body, 1)
+      
+      console.log(response.data[0].url[0])
+      for(let i = 0; i < response.data.length; i++) {
+          // Save picture into DB
+          const logo: Prompted_logos = await this.createPromptedLogo({
+            prompt: { connect: { id_prompt: response.prompt.id_prompt}},
+            filepath_to_logo: response.data[i].filepath
           })
 
           response.data[i].id = logo.id_prompted_logo

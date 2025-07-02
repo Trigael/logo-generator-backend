@@ -48,10 +48,4 @@ export class GenerateLogoDto {
     @IsOptional()
     @IsEnum(Logo_resolutions)
     logo_resolution: Logo_resolutions;
-
-    @IsOptional()
-    @IsNumber()
-    @Min(1)
-    @Max(10)
-    amount_to_generate: number;
 }
