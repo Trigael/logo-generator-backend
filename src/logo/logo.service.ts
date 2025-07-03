@@ -174,8 +174,8 @@ export class LogoService {
       const logo_info = await this.getPromptedLogo(prompted_logo_id)
         
       if(logo_info?.filepath_to_logo) {
-        const oldPath = path.join(__dirname, `public${logo_info.filepath_to_logo}`);
-        const newPath = path.join(__dirname, `public/archived/${path.basename(logo_info.filepath_to_logo).replace('generated_', 'archived_')}`);
+        const oldPath = path.join(process.cwd(), `public${logo_info.filepath_to_logo}`);
+        const newPath = path.join(process.cwd(), `public/archived/${path.basename(logo_info.filepath_to_logo).replace('generated_', 'archived_')}`);
                   
         // Checking that target folder exists
         fs.mkdirSync(path.dirname(newPath), { recursive: true });
