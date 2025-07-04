@@ -52,6 +52,13 @@ export class LogoService {
       return logo
     }
 
+    async getArchivedLogo(archived_logo_id: number): Promise<Archived_logos | null> {
+      return await this.db.archived_logos.findFirst({
+        where: { id_archived_logo: archived_logo_id }
+      })
+    }
+
+
     async getPromptedLogo(logo_id: number) {
       return await this.db.prompted_logos.findUnique({ 
         where: {id_prompted_logo: logo_id}
@@ -100,19 +107,21 @@ export class LogoService {
 
     async generateLogoWithPromptRefactoring(body: GenerateLogoDto, session_id?: string) {
       // TODO: Config amount
-      const response = await this.imageGenerator.generateLogoWitchChatGPTPrompts(body, 1)
-      
+      const response = await this.imageGenerator.generateLogoWitchChatGPTPrompts(body, 2)
+
       for(let i = 0; i < response.data.length; i++) {
           // Save picture into DB
           const logo: Prompted_logos = await this.createPromptedLogo({
             prompt: { connect: { id_prompt: response.prompt.id_prompt}},
-            filepath_to_logo: response.data[i].filepath
+            id_from_model: response.data[i].id,
+            url_to_logo: response.data[i].image_url,
+            filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('/generated')),
           })
 
           response.data[i].id = logo.id_prompted_logo
         }
 
-        return response;
+      return response;
     }
 
     async updatePromptedLogo(id: number, data: Prisma.Prompted_logosUpdateInput) {
@@ -153,7 +162,7 @@ export class LogoService {
           })
 
           // Move logo to 'Archived' file
-          this.moveLogotoArchived(body.logo_ids[i], archived_logo.id_archived_logo)
+          await this.moveLogotoArchived(body.logo_ids[i], archived_logo.id_archived_logo)
         }
         
         // Create order

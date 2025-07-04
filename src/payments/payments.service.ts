@@ -17,7 +17,8 @@ import { OrdersService } from 'src/orders/orders.service';
 import { getCurrencySymbol, getSecret } from 'src/utils/helpers.util';
 import { LoggerService } from 'src/logger/logger.service';
 import { QueueService } from 'src/queue/queue.service';
-import { tryCatch } from 'bullmq';
+
+import { createZip } from 'src/utils/helpers.util'
 
 @Injectable()
 export class PaymentsService {
@@ -250,7 +251,7 @@ export class PaymentsService {
         })
 
         // Updating order state
-        const order = await this.ordersService.updateOrder(payment.order_id, {
+        await this.ordersService.updateOrder(payment.order_id, {
             state: Order_states.COMPLETED,
             completed_at: new Date(),
         })
@@ -261,9 +262,16 @@ export class PaymentsService {
         const product_types_included = await this._updatedOrderItems(payment.order_id, true)
 
         if(product_types_included.generated_logo) {
+            // Getting logos
+            const logo_filepaths = await this.ordersService.getOrdersLogoFilepaths(payment.order_id)
+            const zip = await createZip(logo_filepaths, `generated_logos-${payment.id_payment}`)
+
             // Send email with logo
             try {
-                await this.mailService.sendLogoEmailAfterPayment(payment.id_payment)
+                await this.mailService.sendLogoEmailAfterPayment(
+                    payment.id_payment,
+                    [zip]
+                )
             } catch {
                 this.logger.warn(`[PaymentsService._completePayment] Sending confirmation email for payment ${payment.id_payment} failed. Adding it into the queue.`, { metadata: { payment_id: payment.id_payment } })
                 

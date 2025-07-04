@@ -199,6 +199,7 @@ model Prompted_logos {
 
   // Data
   prompt_id           Int
+  id_from_model       String? // ID retrieved AI Model that generated it
   url_to_logo         String?
   url_valid_to        DateTime?
   filepath_to_logo    String?

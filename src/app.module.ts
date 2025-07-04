@@ -27,9 +27,16 @@ import { QueueModule } from './queue/queue.module';
 import { CronsModule } from './crons/crons.module';
 import { HealthModule } from './health/health.module';
 import { getSecret } from './utils/helpers.util';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+      serveRoot: '/', 
+      exclude: ['/api*'],
+    }),
     ConfigModule.forRoot({
       isGlobal: true, 
     }),

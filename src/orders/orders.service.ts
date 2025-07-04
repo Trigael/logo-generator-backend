@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Currencies, Orders, Prisma } from '@prisma/client';
 import { connect } from 'http2';
 import { DatabaseService } from 'src/database/database.service';
+import { LogoService } from 'src/logo/logo.service';
 import { PricesService } from 'src/prices/prices.service';
 import { ProductTypesService } from 'src/product_types/product_types.service';
 
@@ -15,6 +16,9 @@ export class OrdersService {
         private readonly db: DatabaseService,
         private readonly pricesService: PricesService,
         private readonly productTypesService: ProductTypesService,
+
+        @Inject(forwardRef(() => LogoService))
+        private readonly logoService: LogoService,
     ) {}
 
     async createOrder(
@@ -55,11 +59,11 @@ export class OrdersService {
     }
 
     async updateOrder(order_id: number, data: Prisma.OrdersUpdateInput): Promise<Orders> {
-            return await this.db.orders.update({
-                where: { id_order: order_id },
-                data
-            })
-        }
+        return await this.db.orders.update({
+            where: { id_order: order_id },
+            data
+        })
+    }
 
     async saveItemsIntoOrder(order: Orders, order_items: Order_item[]) {
         const generated_logo_type = await this.productTypesService.getGeneratedLogoProductType()
@@ -78,5 +82,20 @@ export class OrdersService {
               },
             });
         }
+    }
+
+    async getOrdersLogoFilepaths(order_id: number) {
+        const filepaths: string[] = []
+        const order_items = await this.db.order_items.findMany({ 
+            where: { order_id: order_id }
+        })
+
+        for(let i = 0; i < order_items.length; i++) {
+            const logo = await this.logoService.getArchivedLogo(order_items[i].archived_logo_id as number)
+
+            if(logo?.filepath != null) filepaths.push(logo?.filepath)
+        }
+
+        return filepaths
     }
 }

@@ -15,7 +15,7 @@ export class MailjetQueueProcessor extends WorkerHost {
   }
 
   async process(job: Job) {
-    return this.mailjetService.sendLogoEmailAfterPayment(job.data.payment_id);
+    return this.mailjetService.sendLogoEmailAfterPayment(job.data.payment_id, job.data.logo_filepaths);
   }
 
   @OnWorkerEvent('failed')
