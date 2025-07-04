@@ -80,18 +80,6 @@ jobs:
           username: deploy
           key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
           port: 22
-          envs: 
-            FRONTEND_URL=
-            BACKEND_URL=
-            REDIS_URL=
-            STRIPE_PUBLISHABLE_KEY=
-            STRIPE_SECRET_KEY=
-            MAILJET_API_KEY=
-            MAILJET_API_SECRET=
-            MAILJET_FROM_EMAIL=
-            MAILJET_TEMPLATE_ID=
-            SENTRY_DSN=
-            LOKI_USERNAME=
           script: |
             set -e
             export SHORT_SHA_SAFE=$(echo "${{ github.sha }}" | cut -c1-12)
@@ -112,17 +100,11 @@ jobs:
             echo -n "${{ secrets.LOKI_USERNAME }}" | docker secret create LOKI_USERNAME_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.LOKI_PASSWORD }}" | docker secret create LOKI_PASSWORD_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.DB_TRANSACTION_URL }}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.HF_API_KEY }}" | docker secret create HF_API_KEY -
-            echo -n "${{ secrets.BLACK_FOREST_API_KEY }}" | docker secret create BLACK_FOREST_API_KEY -
+            echo -n "${{ secrets.BLACK_FOREST_API_KEY }}" | docker secret create BLACK_FOREST_API_KEY_$SHORT_SHA_SAFE -
 
-      - name: Upload docker-stack.yaml to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: 78.47.30.210
-          username: deploy
-          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-          source: "docker-stack.yaml"
-          target: "~/"
+      - name: Wait for secrets
+        run: |
+          sleep 2
 
       - name: Deploy docker stack
         uses: appleboy/ssh-action@master

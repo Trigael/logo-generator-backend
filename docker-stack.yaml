@@ -23,6 +23,8 @@ services:
       - LOKI_PASSWORD_${SHORT_SHA_SAFE}
       # DB = SUPABASE
       - DB_TRANSACTION_URL_${SHORT_SHA_SAFE}
+      # Black Forest
+      - BLACK_FOREST_API_KEY_${SHORT_SHA_SAFE}
     environment:
       - PORT=4000
       - NODE_ENV=production
@@ -45,7 +47,9 @@ services:
       - LOKI_USERNAME=/run/secrets/LOKI_USERNAME_${SHORT_SHA_SAFE}
       - LOKI_PASSWORD=/run/secrets/LOKI_PASSWORD_${SHORT_SHA_SAFE}
       # DB = SUPABASE
-      - DB_TRANSACTION_URL=${DB_URL_KEY}
+      - DB_TRANSACTION_URL=/run/secrets/${DB_URL_KEY}
+      # Black Forest
+      - BLACK_FOREST_API_KEY=/run/secrets/BLACK_FOREST_API_KEY_${SHORT_SHA_SAFE}
     deploy:
       replicas: 1
       update_config:
@@ -88,4 +92,7 @@ secrets:
     external: true
   # DB
   DB_TRANSACTION_URL_${SHORT_SHA_SAFE}:
+    external: true
+  # Black Forest
+  BLACK_FOREST_API_KEY_${SHORT_SHA_SAFE}:
     external: true
