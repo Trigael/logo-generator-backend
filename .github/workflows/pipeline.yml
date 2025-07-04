@@ -75,6 +75,8 @@ jobs:
       
       - name: Push Docker secrets to server
         uses: appleboy/ssh-action@master
+        env:
+          SHORT_SHA_SAFE: ${{ github.sha }}
         with:
           host: 78.47.30.210
           username: deploy
@@ -82,6 +84,7 @@ jobs:
           port: 22
           script: |
             set -e
+
             export SHORT_SHA_SAFE=$(echo "${{ github.sha }}" | cut -c1-12)
             echo "🔍 SHORT_SHA_SAFE = $SHORT_SHA_SAFE"
             echo "🔍 AI_TOOL_KEY = ${{secrets.AI_TOOL_KEY}}"
@@ -100,6 +103,7 @@ jobs:
             echo -n "${{ secrets.LOKI_USERNAME }}" | docker secret create LOKI_USERNAME_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.LOKI_PASSWORD }}" | docker secret create LOKI_PASSWORD_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.DB_TRANSACTION_URL }}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.HF_API_KEY }}" | docker secret create HF_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.BLACK_FOREST_API_KEY }}" | docker secret create BLACK_FOREST_API_KEY_$SHORT_SHA_SAFE -
 
       - name: Wait for secrets

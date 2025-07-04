@@ -23,6 +23,8 @@ services:
       - LOKI_PASSWORD_${SHORT_SHA_SAFE}
       # DB = SUPABASE
       - DB_TRANSACTION_URL_${SHORT_SHA_SAFE}
+      # Hugging Face
+      - HF_API_KEY_${SHORT_SHA_SAFE}
       # Black Forest
       - BLACK_FOREST_API_KEY_${SHORT_SHA_SAFE}
     environment:
@@ -48,6 +50,8 @@ services:
       - LOKI_PASSWORD=/run/secrets/LOKI_PASSWORD_${SHORT_SHA_SAFE}
       # DB = SUPABASE
       - DB_TRANSACTION_URL=/run/secrets/${DB_URL_KEY}
+      # Hugging Face
+      - HF_API_KEY=/run/secrets/HF_API_KEY_${SHORT_SHA_SAFE}
       # Black Forest
       - BLACK_FOREST_API_KEY=/run/secrets/BLACK_FOREST_API_KEY_${SHORT_SHA_SAFE}
     deploy:
@@ -92,6 +96,9 @@ secrets:
     external: true
   # DB
   DB_TRANSACTION_URL_${SHORT_SHA_SAFE}:
+    external: true
+  # Hugging Face
+  HF_API_KEY_${SHORT_SHA_SAFE}:
     external: true
   # Black Forest
   BLACK_FOREST_API_KEY_${SHORT_SHA_SAFE}:
