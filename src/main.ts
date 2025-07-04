@@ -36,11 +36,9 @@ async function bootstrap() {
   app.use(express.urlencoded({ extended: true }));
 
   app.enableCors({
-    origin: (origin, callback) => {
-      callback(null, true)
-    },
-    credentials: true
-  })
+    origin: '*',
+    credentials: false, 
+  });
 
   // Swagger set up
   const config = new DocumentBuilder()
