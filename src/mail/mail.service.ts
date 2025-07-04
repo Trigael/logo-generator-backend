@@ -24,8 +24,12 @@ export class MailService {
       );
     }
     
-    async sendEmail(to: string, subject: string, templateId?: number, variables?: Record<string, string>) {
+    async sendEmail(to: string, subject: string, templateId?: number, variables?: Record<string, string>, attachments?: string[]) {
         try {
+            const mailjetAttachments = attachments?.length
+                ? _mapAttachmentsToMailjet(attachments)
+                : [];
+
             const response = await this.mailjet
                 .post('send', { version: 'v3.1' })
                 .request({
@@ -42,6 +46,7 @@ export class MailService {
                             TemplateID: templateId,
                             TemplateLanguage: true,
                             Variables: variables,
+                            Attachments: mailjetAttachments,
                         },
                     ],
                 });
@@ -54,7 +59,7 @@ export class MailService {
         }
     }
 
-    async sendLogoEmailAfterPayment(payment_id: number) {
+    async sendLogoEmailAfterPayment(payment_id: number, logo_filepaths: string[]) {
         // TODO: Save in Mails DB Table
         const payment = await this.paymentsService.getPayment(payment_id)
 
@@ -68,9 +73,47 @@ export class MailService {
             user.email,
             `[${payment.id_payment}] Potvrzení platby`,
             Number(getSecret(process.env.MAILJET_TEMPLATE_ID ?? '')),
-            {
-                logo_url: `PLACEHOLDER_URL/LOGO`,
-            }
+            undefined,
+            logo_filepaths
         )
     }
 }
+
+/**
+ * PRIVATE FUNCTIONS
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { join } from 'path';
+
+function _mapAttachmentsToMailjet(attachments: string[]) {
+  return attachments.map(filePath => {
+    const buffer = fs.readFileSync(join(process.cwd(), filePath));
+    const base64 = buffer.toString('base64');
+
+    return {
+      ContentType: _getMimeType(filePath),
+      Filename: path.basename(filePath),
+      Base64Content: base64,
+    };
+  });
+}
+
+function _getMimeType(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  switch (ext) {
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.png':
+      return 'image/png';
+    case '.zip':
+      return 'application/zip';
+    case '.pdf':
+      return 'application/pdf';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
