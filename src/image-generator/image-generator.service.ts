@@ -22,7 +22,7 @@ export class ImageGeneratorService {
     
     // Black Fores DOCS: https://docs.bfl.ai/api-reference/tasks/generate-an-image-with-flux1-[dev]
     private readonly BLACK_FOREST_API_URL = 'https://api.bfl.ai/v1/'; 
-    private readonly BLACK_FOREST_API_KEY = process.env.BLACK_FOREST_API_KEY
+    private readonly BLACK_FOREST_API_KEY = getSecret(process.env.BLACK_FOREST_API_KEY ?? '')
     private readonly BLACK_FOREST_MODEL = 'flux-dev'
 
     private readonly PROMPTED_LOGO_FILEPATH = 'public/generated'
