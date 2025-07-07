@@ -311,7 +311,7 @@ export class ImageGeneratorService {
           resolve(publicUrl);
         });
         writer.on('error', reject);
-      });
+      }); 
     }
 
     async _saveBase64Image(base64String: string, filename: string): Promise<string> {
