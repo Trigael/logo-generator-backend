@@ -13,6 +13,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "prisma:generate": "npx prisma generate",
+    "prisma:seed": "npx prisma db seed",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -99,5 +100,8 @@
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/$1"
     }
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }
