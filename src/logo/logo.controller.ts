@@ -35,10 +35,8 @@ export class LogoController {
   }
 
   @Post('price')
-  async getGeneratedLogoPrice() {
-    // TODO: add multiple currencies to prices
-    // TODO: returns price based on currency
-    const price = await this.pricesService.getPriceOfGeneratedLogo(Currencies.EUR)
+  async getGeneratedLogoPrice(@Body() body: { currency: Currencies }) {
+    const price = await this.pricesService.getPriceOfGeneratedLogo(body.currency)
 
     return {
       product: 'generated_logo',

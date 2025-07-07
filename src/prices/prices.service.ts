@@ -20,12 +20,23 @@ export class PricesService {
 
         if(!product_type) return null
 
-        return await this.db.prices.findFirst({
+        const price = await this.db.prices.findFirst({
             where : { 
                 product_type_id: product_type.id_product_type,
                 currency: currency 
             }
         })
+
+        if(!price) {
+            return await this.db.prices.findFirst({
+                where : { 
+                    product_type_id: product_type.id_product_type,
+                    currency: Currencies.EUR
+                }
+            })
+        }
+
+        return price
     }
 
     async getPriceOfProductType(currency: Currencies, product_type_id: number): Promise<Prices | null> {
