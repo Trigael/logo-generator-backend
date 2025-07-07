@@ -307,7 +307,7 @@ export class ImageGeneratorService {
       // Returning public URL
       return new Promise((resolve, reject) => {
         writer.on('finish', () => {
-          const publicUrl = `${process.env.BACKEND_URL}/` + join(this.PROMPTED_LOGO_FILEPATH, filename).replace(/^public[\\/]/, '').replace(/\\/g, '/');
+          const publicUrl = `${getSecret(process.env.BACKEND_URL ?? '')}/` + join(this.PROMPTED_LOGO_FILEPATH, filename).replace(/^public[\\/]/, '').replace(/\\/g, '/');
           resolve(publicUrl);
         });
         writer.on('error', reject);
