@@ -25,6 +25,7 @@ export class ImageGeneratorService {
     private readonly BLACK_FOREST_API_KEY = getSecret(process.env.BLACK_FOREST_API_KEY ?? '')
     private readonly BLACK_FOREST_MODEL = 'flux-dev'
 
+    // TODO: From config file
     private readonly PROMPTED_LOGO_FILEPATH = 'public/generated'
     constructor(
         private readonly httpService: HttpService,

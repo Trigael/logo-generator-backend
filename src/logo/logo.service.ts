@@ -3,6 +3,7 @@ import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import * as fs from 'fs';
 import * as path from 'path';
+import { unlink } from 'fs/promises';
 
 // DTOs
 import { GenerateLogoDto } from './dto/generate-logo.dto';
@@ -22,6 +23,7 @@ import { getSecret } from 'src/utils/helpers.util';
 
 @Injectable()
 export class LogoService {
+
     constructor(
         private readonly db: DatabaseService,
         private readonly imageGenerator: ImageGeneratorService,
@@ -74,7 +76,23 @@ export class LogoService {
 
       targetDate.setDate(targetDate.getDate() - days);
 
-      // TODO: delete from files
+      const filepaths_for_logos: string[] = []
+      const logos_to_delete = await this.db.prompted_logos.findMany({
+        where: {
+          created_at: {
+            lt: targetDate,
+          },
+          bought: false,
+        },
+      });
+
+      // Extracting filepaths for logos
+      for(let i = 0; i < logos_to_delete.length; i++) {
+        filepaths_for_logos.push(logos_to_delete[i].filepath_to_logo ?? '')
+      }
+
+      // Deleting all selected images localy
+      await this._deleteLocalImages(filepaths_for_logos)
 
       return await this.db.prompted_logos.deleteMany({
         where: {
@@ -243,6 +261,24 @@ export class LogoService {
           }
         };
 
+    }
+
+    private async _deleteLocalImages(filepaths: string[]) {
+      const deletions = filepaths.map(async (filepath) => {
+        try {
+          if (!filepath || filepath.trim() === '') return;
+
+          const absolutePath = path.resolve('public', filepath); 
+
+          await unlink(absolutePath);
+
+          console.log(`Deleted image: ${absolutePath}`);
+        } catch (err: any) {
+          console.warn(`Failed to delete ${filepath}: ${err.message}`);
+        }
+      });
+    
+      await Promise.all(deletions); 
     }
     // #endregion
 }
