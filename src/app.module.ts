@@ -29,6 +29,7 @@ import { HealthModule } from './health/health.module';
 import { getSecret } from './utils/helpers.util';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { ConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { join } from 'path';
     QueueModule,
     CronsModule,
     HealthModule,
+    ConfigModule,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService],

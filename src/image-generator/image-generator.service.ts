@@ -13,6 +13,8 @@ import { GenerateLogoDto } from 'src/logo/dto/generate-logo.dto';
 import { PromptsService } from 'src/prompts/prompts.service';
 import { getSecret } from 'src/utils/helpers.util';
 import { InternalErrorException } from 'src/utils/exceptios';
+import { ConfigService } from '@nestjs/config';
+import { CONFIG_OPTIONS } from 'src/config/config.service';
 
 
 @Injectable()
@@ -25,15 +27,16 @@ export class ImageGeneratorService {
     private readonly BLACK_FOREST_API_KEY = getSecret(process.env.BLACK_FOREST_API_KEY ?? '')
     private readonly BLACK_FOREST_MODEL = 'flux-dev'
 
-    // TODO: From config file
-    private readonly PROMPTED_LOGO_FILEPATH = 'public/generated'
     constructor(
         private readonly httpService: HttpService,
         private readonly promptsService: PromptsService,
+        private readonly config: ConfigService,
+
+        private readonly PROMPTED_LOGO_FILEPATH = this.config.get(CONFIG_OPTIONS.PROMPTED_LOGO_FILEPATH),
+        private readonly CHATGPT_MODEL = this.config.get(CONFIG_OPTIONS.CHATGPT_MODEL),
     ) {}
     
     async generateLogo(body: GenerateLogoDto, amount: number) {
-        // TODO: Config AI_Model
         const ai_model = "dall-e-3"
         const prompt: Prompts = await this.promptsService.createPrompt({
             ai_model: ai_model,
@@ -122,14 +125,13 @@ export class ImageGeneratorService {
      * PRIVATE FUNCTIONS FOR AI MODELS
      */
     async _callToChatGPTApi(prompt: string) {
-        // TODO: Config ChatGPT Model
         const headers = {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${getSecret(process.env.AI_TOOL_KEY ?? '')}`
         }
 
         const data = {
-            model: "gpt-4",
+            model: this.CHATGPT_MODEL,
             messages: [
               { role: "user", content: prompt }
             ]

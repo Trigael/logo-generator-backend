@@ -11,6 +11,7 @@ import { PricesModule } from 'src/prices/prices.module';
 import { UsersModule } from 'src/users/users.module';
 import { OrdersModule } from 'src/orders/orders.module';
 import { ProductTypesModule } from 'src/product_types/product_types.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ProductTypesModule } from 'src/product_types/product_types.module';
     UsersModule,
     OrdersModule,
     ProductTypesModule,
+    ConfigModule,
     forwardRef(() => PaymentsModule),
   ],
   controllers: [LogoController],
