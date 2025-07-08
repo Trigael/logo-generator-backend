@@ -6,18 +6,26 @@ import { PaymentsService } from 'src/payments/payments.service';
 import { UsersService } from 'src/users/users.service';
 import { InternalErrorException } from 'src/utils/exceptios';
 import { getSecret } from 'src/utils/helpers.util';
+import * as fs from 'fs';
+import * as path from 'path';
+import { join } from 'path';
+import { DatabaseService } from 'src/database/database.service';
+
 
 @Injectable()
 export class MailService {
     private readonly mailjet;
 
     constructor(
+        @Inject(forwardRef(() => DatabaseService))
         private readonly db: DatabaseService,
 
         @Inject(forwardRef(() => PaymentsService))
         private readonly paymentsService: PaymentsService,
+
         @Inject(forwardRef(() => UsersService))
         private readonly usersService: UsersService,
+
         @Inject(forwardRef(() => LogoService))
         private readonly logoService: LogoService,
     ) {
@@ -108,12 +116,6 @@ export class MailService {
 /**
  * PRIVATE FUNCTIONS
  */
-
-import * as fs from 'fs';
-import * as path from 'path';
-import { join } from 'path';
-import { DatabaseService } from 'src/database/database.service';
-
 function _mapAttachmentsToMailjet(attachments: string[]) {
   return attachments.map(filePath => {
     const buffer = fs.readFileSync(join(process.cwd(), filePath));

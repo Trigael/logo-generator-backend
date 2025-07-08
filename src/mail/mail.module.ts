@@ -9,7 +9,7 @@ import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
   imports: [
-    DatabaseModule,
+    forwardRef(() => DatabaseModule),
     forwardRef(() => PaymentsModule),
     forwardRef(() => UsersModule),
     forwardRef(() => LogoModule),

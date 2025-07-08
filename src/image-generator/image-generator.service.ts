@@ -27,14 +27,17 @@ export class ImageGeneratorService {
     private readonly BLACK_FOREST_API_KEY = getSecret(process.env.BLACK_FOREST_API_KEY ?? '')
     private readonly BLACK_FOREST_MODEL = 'flux-dev'
 
+    private readonly PROMPTED_LOGO_FILEPATH: string
+    private readonly CHATGPT_MODEL: string
+    
     constructor(
         private readonly httpService: HttpService,
         private readonly promptsService: PromptsService,
         private readonly config: ConfigService,
-
-        private readonly PROMPTED_LOGO_FILEPATH = this.config.get(CONFIG_OPTIONS.PROMPTED_LOGO_FILEPATH),
-        private readonly CHATGPT_MODEL = this.config.get(CONFIG_OPTIONS.CHATGPT_MODEL),
-    ) {}
+    ) {
+      this.PROMPTED_LOGO_FILEPATH = this.config.get(CONFIG_OPTIONS.PROMPTED_LOGO_FILEPATH) as string
+      this.CHATGPT_MODEL = this.config.get(CONFIG_OPTIONS.CHATGPT_MODEL) as string
+    }
     
     async generateLogo(body: GenerateLogoDto, amount: number) {
         const ai_model = "dall-e-3"
