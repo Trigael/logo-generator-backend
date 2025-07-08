@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule as ConfigModuleNest} from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -38,7 +38,7 @@ import { ConfigModule } from './config/config.module';
       serveRoot: '/', 
       exclude: ['/api*'],
     }),
-    ConfigModule.forRoot({
+    ConfigModuleNest.forRoot({
       isGlobal: true, 
     }),
     LogoModule, 
