@@ -3,6 +3,9 @@ services:
     image: ghcr.io/trigael/ai-logo-generator:${GIT_COMMIT_HASH}
     ports:
       - "4000:4000"
+    networks:
+      - ai-logo-caddy
+      - caddy-shared-swarm
     secrets:
       - AI_TOOL_KEY_${SHORT_SHA_SAFE}
       - FRONTEND_URL_${SHORT_SHA_SAFE}
@@ -64,6 +67,12 @@ services:
 volumes:
   db-data:
   letsencrypt:
+
+networks:
+  ai-logo-caddy:
+    external: true
+  caddy-shared-swarm:
+    external: true
 
 secrets:
   AI_TOOL_KEY_${SHORT_SHA_SAFE}:
