@@ -13,8 +13,7 @@ import { GenerateLogoDto } from 'src/logo/dto/generate-logo.dto';
 import { PromptsService } from 'src/prompts/prompts.service';
 import { getSecret } from 'src/utils/helpers.util';
 import { InternalErrorException } from 'src/utils/exceptios';
-import { ConfigService } from '@nestjs/config';
-import { CONFIG_OPTIONS } from 'src/config/config.service';
+import { ConfigService, CONFIG_OPTIONS } from 'src/config/config.service';
 
 
 @Injectable()
@@ -27,16 +26,18 @@ export class ImageGeneratorService {
     private readonly BLACK_FOREST_API_KEY = getSecret(process.env.BLACK_FOREST_API_KEY ?? '')
     private readonly BLACK_FOREST_MODEL = 'flux-dev'
 
-    private readonly PROMPTED_LOGO_FILEPATH: string
-    private readonly CHATGPT_MODEL: string
+    private PROMPTED_LOGO_FILEPATH: string
+    private CHATGPT_MODEL: string
     
     constructor(
         private readonly httpService: HttpService,
         private readonly promptsService: PromptsService,
         private readonly config: ConfigService,
-    ) {
-      this.PROMPTED_LOGO_FILEPATH = this.config.get(CONFIG_OPTIONS.PROMPTED_LOGO_FILEPATH) as string
-      this.CHATGPT_MODEL = this.config.get(CONFIG_OPTIONS.CHATGPT_MODEL) as string
+    ) {}
+
+    async onModuleInit() {
+      this.PROMPTED_LOGO_FILEPATH = await this.config.get(CONFIG_OPTIONS.PROMPTED_LOGO_FILEPATH) as string;
+      this.CHATGPT_MODEL = await this.config.get(CONFIG_OPTIONS.CHATGPT_MODEL) as string;
     }
     
     async generateLogo(body: GenerateLogoDto, amount: number) {
@@ -79,7 +80,7 @@ export class ImageGeneratorService {
     }
 
     async generateLogoWitchChatGPTPrompts(body: GenerateLogoDto, amount: number) {
-        const prompt: Prompts = await this.promptsService.createPrompt({
+      const prompt: Prompts = await this.promptsService.createPrompt({
             ai_model: 'ChatGPT_to_Flux',
             brand_name: body.brand_name,
             slogan: body.slogan,
