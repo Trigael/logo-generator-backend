@@ -110,9 +110,15 @@ jobs:
             echo -n "${{ secrets.HF_API_KEY }}" | docker secret create HF_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.BLACK_FOREST_API_KEY }}" | docker secret create BLACK_FOREST_API_KEY_$SHORT_SHA_SAFE -
 
-      - name: Wait for secrets
-        run: |
-          sleep 2
+      - name: Copy docker stack file
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ env.TARGET_HOST }}
+          username: deploy
+          key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: 22
+          source: docker-stack.yaml
+          target: /home/deploy/
 
       - name: Deploy docker stack
         uses: appleboy/ssh-action@master
