@@ -64,19 +64,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set SSH key based on branch
-        run: |
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            echo "DEPLOY_KEY=${{ secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY }}" >> $GITHUB_ENV
-          else
-            echo "DEPLOY_KEY=${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" >> $GITHUB_ENV
-          fi
-
-
-      - name: Setup SSH key
+      - name: Write SSH private key to file
         run: |
           mkdir -p ~/.ssh
-          echo "${{ env.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "${{ secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          else
+            echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          fi
           chmod 600 ~/.ssh/id_ed25519
 
       - name: Test SSH connection
@@ -89,7 +84,7 @@ jobs:
         with:
           host: ${{ env.TARGET_HOST }}
           username: deploy
-          key: ${{ env.DEPLOY_KEY }}
+          key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
           port: 22
           script: |
             set -e
@@ -124,7 +119,7 @@ jobs:
         with:
           host: ${{ env.TARGET_HOST }}
           username: deploy
-          key: ${{ env.DEPLOY_KEY }} 
+          key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
           port: 22
           envs: 
             GIT_COMMIT_HASH=${{ github.sha }}
@@ -151,7 +146,7 @@ jobs:
         with:
           host: ${{ env.TARGET_HOST }}
           username: deploy
-          key: ${{ env.DEPLOY_KEY }}
+          key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
           port: 22
           envs: 
             GIT_COMMIT_HASH=${{ github.sha }}
