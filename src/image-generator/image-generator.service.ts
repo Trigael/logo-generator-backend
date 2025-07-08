@@ -108,6 +108,18 @@ export class ImageGeneratorService {
         
         prompts_array = JSON.parse(amount > 1 ? rawContent : cleaned);
 
+        // Saving ChatGPT generated prompts
+        const originalMetadata = prompt.metadata && typeof prompt.metadata === 'object'
+          ? prompt.metadata
+          : {};
+              
+        await this.promptsService.updatePrompt(prompt.id_prompt, {
+          metadata: {
+            ...originalMetadata,
+            chatgpt_prompts: prompts_array,
+          },
+        });
+
         // Generating images through Flux
         const generated_imgs = await this._generateThroughFlux1(prompts_array)
 
