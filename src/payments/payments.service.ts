@@ -107,13 +107,15 @@ export class PaymentsService {
             user_id: order.user_id
         } })
 
+        let images = await this.ordersService.getOrdersLogoFilepaths(order.id_order, true)
+
         // Creating products for stripe payment
         const products = {
             price_data: {
                 currency: order.currency.toLocaleLowerCase(),
                 product_data: {
                     name: "Custom generated logo",
-                    // images: images,
+                    images: images,
                     // description: "Handmade cotton t-shirt.",
                     // shippable: false,
                     // metadata: { "sku": "T-SHIRT-BLACK-M", "designer": "Alex" },
@@ -139,6 +141,7 @@ export class PaymentsService {
         }
 
         db_response.stripe = stripe_repsonse
+        db_response.images = images
 
         return db_response
     }

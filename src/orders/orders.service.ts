@@ -5,6 +5,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { LogoService } from 'src/logo/logo.service';
 import { PricesService } from 'src/prices/prices.service';
 import { ProductTypesService } from 'src/product_types/product_types.service';
+import { getSecret } from 'src/utils/helpers.util';
 
 import { Order_item } from 'src/utils/types.util';
 
@@ -84,7 +85,7 @@ export class OrdersService {
         }
     }
 
-    async getOrdersLogoFilepaths(order_id: number) {
+    async getOrdersLogoFilepaths(order_id: number, as_url?: boolean) {
         const filepaths: string[] = []
         const order_items = await this.db.order_items.findMany({ 
             where: { order_id: order_id }
@@ -93,7 +94,7 @@ export class OrdersService {
         for(let i = 0; i < order_items.length; i++) {
             const logo = await this.logoService.getArchivedLogo(order_items[i].archived_logo_id as number)
 
-            if(logo?.filepath != null) filepaths.push(logo?.filepath)
+            if(logo?.filepath != null) filepaths.push(as_url ? `${getSecret(process.env.BACKEND_URL ?? '')}${logo?.filepath}` : logo?.filepath)
         }
 
         return filepaths
