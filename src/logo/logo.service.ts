@@ -21,6 +21,7 @@ import { Order_item } from 'src/utils/types.util';
 import { ProductTypesService } from 'src/product_types/product_types.service';
 import { getSecret } from 'src/utils/helpers.util';
 import { CONFIG_OPTIONS, ConfigService } from 'src/config/config.service';
+import { S3Service } from 'src/s3/s3.service';
 
 @Injectable()
 export class LogoService {
@@ -33,6 +34,7 @@ export class LogoService {
         private readonly ordersService: OrdersService,
         private readonly productTypesService: ProductTypesService,
         private readonly config: ConfigService,
+        private readonly s3: S3Service,
         
         @Inject(forwardRef(() => PaymentsService))
         private readonly paymentsService: PaymentsService,
@@ -77,7 +79,7 @@ export class LogoService {
       const targetDate = new Date();
 
       targetDate.setDate(targetDate.getDate() - days);
-
+      
       const filepaths_for_logos: string[] = []
       const logos_to_delete = await this.db.prompted_logos.findMany({
         where: {
@@ -94,7 +96,9 @@ export class LogoService {
       }
 
       // Deleting all selected images localy
-      await this._deleteLocalImages(filepaths_for_logos)
+      filepaths_for_logos.forEach(filepath => {
+        this.s3.deleteFile(filepath)
+      });
 
       return await this.db.prompted_logos.deleteMany({
         where: {
@@ -141,7 +145,7 @@ export class LogoService {
             prompt: { connect: { id_prompt: response.prompt.id_prompt}},
             id_from_model: response.data[i].id,
             url_to_logo: response.data[i].image_url,
-            filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('/generated')),
+            filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('generated')),
           })
 
           response.data[i].id = logo.id_prompted_logo
@@ -187,7 +191,7 @@ export class LogoService {
             product_id: archived_logo.id_archived_logo
           })
 
-          // Move logo to 'Archived' file
+          // Move logo to 'Archived' folder
           await this.moveLogotoArchived(body.logo_ids[i], archived_logo.id_archived_logo)
         }
         
@@ -207,16 +211,13 @@ export class LogoService {
     async moveLogotoArchived(prompted_logo_id: number, archived_logo_id: number) {
       // Move generated logos into archived logos file
       const logo_info = await this.getPromptedLogo(prompted_logo_id)
-        
+      
       if(logo_info?.filepath_to_logo) {
-        const oldPath = path.join(process.cwd(), `public${logo_info.filepath_to_logo}`);
-        const newPath = path.join(process.cwd(), `public/archived/${path.basename(logo_info.filepath_to_logo).replace('generated_', 'archived_')}`);
-                  
-        // Checking that target folder exists
-        fs.mkdirSync(path.dirname(newPath), { recursive: true });
-                  
+        const oldPath = `${logo_info.filepath_to_logo}`;
+        const newPath = `archived/${path.basename(logo_info.filepath_to_logo).replace('generated_', 'archived_')}`;
+          
         // Move file with renaming
-        fs.renameSync(oldPath, newPath);
+        await this.s3.moveObject(oldPath, newPath);
 
         // Update filepath of logo
         await this.updatePromptedLogo(prompted_logo_id, { filepath_to_logo: '' })

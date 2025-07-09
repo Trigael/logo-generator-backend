@@ -14,6 +14,7 @@ import { PromptsService } from 'src/prompts/prompts.service';
 import { getSecret } from 'src/utils/helpers.util';
 import { InternalErrorException } from 'src/utils/exceptios';
 import { ConfigService, CONFIG_OPTIONS } from 'src/config/config.service';
+import { S3Service } from 'src/s3/s3.service';
 
 
 @Injectable()
@@ -33,6 +34,7 @@ export class ImageGeneratorService {
         private readonly httpService: HttpService,
         private readonly promptsService: PromptsService,
         private readonly config: ConfigService,
+        private readonly s3: S3Service,
     ) {}
 
     async onModuleInit() {
@@ -112,7 +114,7 @@ export class ImageGeneratorService {
         const originalMetadata = prompt.metadata && typeof prompt.metadata === 'object'
           ? prompt.metadata
           : {};
-              
+
         await this.promptsService.updatePrompt(prompt.id_prompt, {
           metadata: {
             ...originalMetadata,
@@ -126,8 +128,8 @@ export class ImageGeneratorService {
         // Save images locally
         await Promise.all(
           generated_imgs.map(async (img, i) => {
-            const localUrl = await this._downloadImage(img.image_url, `generated_logo-${img.id}.jpg`);
-            img.image_url = localUrl; // rewriting original URL
+            // rewriting original URL
+            img.image_url = await this._uploadImageFromUrl(img.image_url, `generated/generated_logo-${img.id}.jpg`); 
           }),
         );
 
@@ -347,5 +349,16 @@ export class ImageGeneratorService {
       fs.writeFileSync(fullPath, base64Data, 'base64');
 
       return `/generated/${filename}.png`; 
+    }
+
+    async _uploadImageFromUrl(imageUrl: string, filename: string): Promise<string> {
+      const response = await firstValueFrom(
+        this.httpService.get(imageUrl, { responseType: 'arraybuffer' }),
+      );
+    
+      const buffer = Buffer.from(response.data);
+      const key = `${filename}`;
+    
+      return this.s3.uploadImage(buffer, key);
     }
 }

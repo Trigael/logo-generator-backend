@@ -12,6 +12,7 @@ import { UsersModule } from 'src/users/users.module';
 import { OrdersModule } from 'src/orders/orders.module';
 import { ProductTypesModule } from 'src/product_types/product_types.module';
 import { ConfigModule } from 'src/config/config.module';
+import { S3Module } from 'src/s3/s3.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ConfigModule } from 'src/config/config.module';
     OrdersModule,
     ProductTypesModule,
     ConfigModule,
+    S3Module,
     forwardRef(() => PaymentsModule),
   ],
   controllers: [LogoController],
