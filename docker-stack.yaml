@@ -30,6 +30,9 @@ services:
       - HF_API_KEY_${SHORT_SHA_SAFE}
       # Black Forest
       - BLACK_FOREST_API_KEY_${SHORT_SHA_SAFE}
+      # Hetzner
+      - HETZNER_SECRET_KEY_${SHORT_SHA_SAFE}
+      - HETZNER_ACCESS_KEY_${SHORT_SHA_SAFE}
     environment:
       - PORT=4000
       - NODE_ENV=production
