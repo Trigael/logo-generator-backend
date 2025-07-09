@@ -18,7 +18,7 @@ import { getCurrencySymbol, getSecret } from 'src/utils/helpers.util';
 import { LoggerService } from 'src/logger/logger.service';
 import { QueueService } from 'src/queue/queue.service';
 
-import { createZip } from 'src/utils/helpers.util'
+import { createZipFromUrls } from 'src/utils/helpers.util'
 
 @Injectable()
 export class PaymentsService {
@@ -266,8 +266,8 @@ export class PaymentsService {
 
         if(product_types_included.generated_logo) {
             // Getting logos
-            const logo_filepaths = await this.ordersService.getOrdersLogoFilepaths(payment.order_id)
-            const zip = await createZip(logo_filepaths, `generated_logos-${payment.id_payment}`)
+            const logo_urls = await this.ordersService.getOrdersLogoFilepaths(payment.order_id)
+            const zip = await createZipFromUrls(logo_urls, `generated_logos-${payment.id_payment}`)
 
             // Send email with logo
             try {

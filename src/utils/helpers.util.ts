@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as archiver from 'archiver';
 import { join, basename, isAbsolute } from 'path';
 import * as path from 'path'
+import axios from 'axios';
 
 const ZIP_FILEPATH = 'public/zips'
 
@@ -26,9 +27,7 @@ export function getSecret(pathOrValue: string): string {
   return pathOrValue;
 }
 
-export async function createZip(filePaths: string[], outputName: string): Promise<string> {
-  console.log(`[createZip] ${filePaths}`);
-
+export async function createZipFromUrls(imageUrls: string[], outputName: string): Promise<string> {
   const zipDir = join(process.cwd(), ZIP_FILEPATH);
   if (!fs.existsSync(zipDir)) {
     fs.mkdirSync(zipDir, { recursive: true });
@@ -40,30 +39,28 @@ export async function createZip(filePaths: string[], outputName: string): Promis
 
   return new Promise((resolve, reject) => {
     output.on('close', () => {
-      console.log(`[createZip] ZIP created: ${zipPath}`);
+      console.log(`[createZipFromUrls] ZIP created: ${zipPath}`);
       resolve(`/${ZIP_FILEPATH}/${outputName}.zip`.replace(/\\/g, '/'));
     });
 
     archive.on('error', (err) => {
-      console.error('[createZip] Archive error:', err);
+      console.error('[createZipFromUrls] Archive error:', err);
       reject(err);
     });
 
     archive.pipe(output);
 
-    filePaths.forEach((imgPath) => {
-      const fullPath = join(process.cwd(), 'public', imgPath)
-
-      if (!fs.existsSync(fullPath)) {
-        console.warn(`[createZip] File not found: ${fullPath}`);
-        return;
-      }
-
-      const filename = basename(fullPath);
-      console.log(`[createZip] Adding: ${fullPath}`);
-      archive.file(fullPath, { name: filename });
-    });
-
-    archive.finalize();
+    Promise.all(
+      imageUrls.map(async (url) => {
+        try {
+          const response = await axios.get(url, { responseType: 'arraybuffer' });
+          const filename = basename(url);
+          archive.append(response.data, { name: filename });
+          console.log(`[createZipFromUrls] Added: ${filename}`);
+        } catch (err) {
+          console.warn(`[createZipFromUrls] Failed to fetch: ${url}`, err);
+        }
+      }),
+    ).then(() => archive.finalize());
   });
 }
