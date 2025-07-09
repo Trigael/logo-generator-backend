@@ -20,8 +20,7 @@ import { OrdersService } from 'src/orders/orders.service';
 import { Order_item } from 'src/utils/types.util';
 import { ProductTypesService } from 'src/product_types/product_types.service';
 import { getSecret } from 'src/utils/helpers.util';
-import { ConfigService } from '@nestjs/config';
-import { CONFIG_OPTIONS } from 'src/config/config.service';
+import { CONFIG_OPTIONS, ConfigService } from 'src/config/config.service';
 
 @Injectable()
 export class LogoService {
@@ -108,9 +107,10 @@ export class LogoService {
     }
 
     async generateLogo(body: GenerateLogoDto, session_id?: string) {
+        const amount = await this.config.get(CONFIG_OPTIONS.AMOUNT_OF_PICS_TO_GENERATE) as number
         const response = await this.imageGenerator.generateLogo(
           body, 
-          this.config.get(CONFIG_OPTIONS.AMOUNT_OF_PICS_TO_GENERATE) as number
+          amount
         )
         const now = new Date()
 
@@ -129,9 +129,10 @@ export class LogoService {
     }
 
     async generateLogoWithPromptRefactoring(body: GenerateLogoDto, session_id?: string) {
+      const amount = await this.config.get(CONFIG_OPTIONS.AMOUNT_OF_PICS_TO_GENERATE) as number
       const response = await this.imageGenerator.generateLogoWitchChatGPTPrompts(
         body, 
-        this.config.get(CONFIG_OPTIONS.AMOUNT_OF_PICS_TO_GENERATE) as number
+        amount
       )
 
       for(let i = 0; i < response.data.length; i++) {
