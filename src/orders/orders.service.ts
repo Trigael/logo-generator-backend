@@ -90,13 +90,13 @@ export class OrdersService {
         const order_items = await this.db.order_items.findMany({ 
             where: { order_id: order_id }
         })
-
+        console.log(order_items)
         for(let i = 0; i < order_items.length; i++) {
             const logo = await this.logoService.getArchivedLogo(order_items[i].archived_logo_id as number)
 
-            if(logo?.filepath != null) filepaths.push(as_url ? `${getSecret(process.env.BACKEND_URL ?? '')}${logo?.filepath}` : logo?.filepath)
+            if(logo?.filepath != null) filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/logonest-ai${logo?.filepath}` : logo?.filepath)
         }
-
+        console.log(filepaths)
         return filepaths
     }
 }
