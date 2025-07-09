@@ -109,6 +109,8 @@ jobs:
             echo -n "${{ secrets.DB_TRANSACTION_URL }}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.HF_API_KEY }}" | docker secret create HF_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.BLACK_FOREST_API_KEY }}" | docker secret create BLACK_FOREST_API_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.HETZNER_SECRET_KEY }}" | docker secret create HETZNER_SECRET_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.HETZNER_ACCESS_KEY }}" | docker secret create HETZNER_ACCESS_KEY_$SHORT_SHA_SAFE -
 
       - name: Copy docker stack file
         uses: appleboy/scp-action@master
