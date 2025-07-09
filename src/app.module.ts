@@ -30,6 +30,7 @@ import { getSecret } from './utils/helpers.util';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ConfigModule } from './config/config.module';
+import { S3Module } from './s3/s3.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { ConfigModule } from './config/config.module';
     CronsModule,
     HealthModule,
     ConfigModule,
+    S3Module,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService],
