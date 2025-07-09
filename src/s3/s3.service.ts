@@ -12,14 +12,17 @@ import { getSecret } from 'src/utils/helpers.util';
 
 @Injectable()
 export class S3Service {
+  private readonly bucket_endpoint = 'https://nbg1.your-objectstorage.com'
+  private readonly bucket_name = 'logonest-ai'
+
   private readonly s3: S3Client;
   private readonly bucket: string;
 
   constructor() {
-    this.bucket = 'logonest-ai';
+    this.bucket = this.bucket_name;
     this.s3 = new S3Client({
       region: 'us-east-1',
-      endpoint: 'https://nbg1.your-objectstorage.com',
+      endpoint: this.bucket_endpoint,
       credentials: {
         accessKeyId: getSecret(process.env.HETZNER_ACCESS_KEY ?? ''),
         secretAccessKey: getSecret(process.env.HETZNER_SECRET_KEY ?? ''),
@@ -40,7 +43,7 @@ export class S3Service {
 
       await this.s3.send(command);
 
-      return `https://nbg1.your-objectstorage.com/logonest-ai/${key}`;
+      return `${this.bucket_endpoint}/${this.bucket_name}/${key}`;
     } catch (error) {
       throw new InternalErrorException(`[S3] Internal error occured: ${error}`)
     }
@@ -57,27 +60,30 @@ export class S3Service {
 
   async moveObject(oldKey: string, newKey: string): Promise<void> {
     try {
+      const cleanedOldKey = oldKey.replace(/^\/+/, '');
+      const cleanedNewKey = newKey.replace(/^\/+/, '');
+
       // Copy object
       const copyCommand = new CopyObjectCommand({
         Bucket: this.bucket,
-        CopySource: `/${this.bucket}/${oldKey}`, 
-        Key: newKey,
-        ACL: 'public-read', 
+        CopySource: `${this.bucket}/${cleanedOldKey}`, 
+        Key: cleanedNewKey,
+        // ACL: 'public-read', 
       });
-      console.log('Copied')
+      
       await this.s3.send(copyCommand);
     
       // Delete original
       const deleteCommand = new DeleteObjectCommand({
         Bucket: this.bucket,
-        Key: oldKey,
+        Key: cleanedOldKey,
       });
     
       await this.s3.send(deleteCommand);
     } catch (error) {
-      console.log(`[S3] Error occured during moving object: ${error}`)
+      console.log(`[S3] Error occured during moving object: ${JSON.stringify(error)}`)
 
-      throw new InternalErrorException(`[S3] Error occured during moving object: ${error}`)
+      throw new InternalErrorException(`[S3] Error occured during moving object: ${JSON.stringify(error)}`)
     }
   }
 }

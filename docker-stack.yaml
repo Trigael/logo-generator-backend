@@ -61,8 +61,8 @@ services:
       # Black Forest
       - BLACK_FOREST_API_KEY=/run/secrets/BLACK_FOREST_API_KEY_${SHORT_SHA_SAFE}
       # Hetzner
-      - HETZNER_SECRET_KEY=/run/secrets/HETZNER_SECRET_KEY
-      - HETZNER_ACCESS_KEY=/run/secrets/HETZNER_ACCESS_KEY
+      - HETZNER_SECRET_KEY=/run/secrets/HETZNER_SECRET_KEY_${SHORT_SHA_SAFE}
+      - HETZNER_ACCESS_KEY=/run/secrets/HETZNER_ACCESS_KEY_${SHORT_SHA_SAFE}
     deploy:
       replicas: 1
       update_config:
