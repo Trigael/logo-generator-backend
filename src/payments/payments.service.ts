@@ -1,6 +1,9 @@
 import { HttpService } from '@nestjs/axios';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { mkdirSync, existsSync } from 'fs';
 import { Order_items, Order_states, Orders, Payment_states, Payments, Prisma } from '@prisma/client';
 
 // DTOs
@@ -19,6 +22,7 @@ import { LoggerService } from 'src/logger/logger.service';
 import { QueueService } from 'src/queue/queue.service';
 
 import { createZipFromUrls } from 'src/utils/helpers.util'
+import axios from 'axios';
 
 @Injectable()
 export class PaymentsService {
@@ -149,8 +153,8 @@ export class PaymentsService {
     async verifyPayment(body: VerifyPaymentDto) {
         try {
           const session = await this.stripe.checkout.sessions.retrieve(body.session_id); 
-        
-          if (session.payment_status === 'paid') {
+          
+          if (session.payment_status == 'paid') {
             const payment = await this._completePayment(body.session_id)
             const order: Orders | null = payment ? await this.ordersService.getOrder(payment?.order_id) : null
 
@@ -203,6 +207,75 @@ export class PaymentsService {
         }
         
         return true
+    }
+
+    async createStripeInvoice(session_id: string): Promise<string> {
+      const session = await this.stripe.checkout.sessions.retrieve(session_id);
+
+      const email = session.customer_details?.email;
+      const name = session.customer_details?.name ?? 'Zákazník';
+      const amount = session.amount_total;
+      const currency = session.currency;
+
+      if (!email || !amount || !currency) {
+        throw new InternalErrorException('Missing Stripe data')
+      }
+
+      const customer = await this.getOrCreateStripeCustomer(email, name);
+
+      await this.stripe.invoiceItems.create({
+        customer: customer.id,
+        amount,
+        currency,
+        description: 'Custom logo creation',
+      });
+
+      const invoice: any = await this.stripe.invoices.create({
+        customer: customer.id,
+        auto_advance: true,
+      });
+
+      const finalized = await this.stripe.invoices.finalizeInvoice(invoice.id);
+
+      const invoicePdfUrl = finalized.invoice_pdf;
+
+      if (!invoicePdfUrl) throw new InternalErrorException(`Failed to retrieve PDF file of invoice`);
+
+      const localPath = await this.downloadInvoicePdf(invoicePdfUrl, invoice.id);
+
+      return localPath;
+    }
+
+    private async getOrCreateStripeCustomer(email: string, name?: string) {
+      const existing = await this.stripe.customers.list({ email, limit: 1 });
+
+      if (existing.data.length > 0) return existing.data[0];
+        
+      return await this.stripe.customers.create({ email, name });
+    }
+
+    private async downloadInvoicePdf(pdfUrl: string, invoiceId: string): Promise<string> {
+      const dir = path.join(process.cwd(), 'public/invoices');
+      const filename = `invoice-${invoiceId}.pdf`;
+      const fullPath = path.join(dir, filename);
+          
+      try {
+        if (!existsSync(dir)) {
+          await fs.mkdir(dir, { recursive: true });
+        }
+      
+        const response = await axios.get(pdfUrl, { responseType: 'arraybuffer' });
+
+        await fs.writeFile(fullPath, response.data);
+      
+        const relativePath = path.relative(process.cwd(), fullPath);
+
+        return relativePath;
+      } catch (err) {
+        console.error(`[downloadInvoicePdf] Error occured during invoice download:`, err);
+
+        throw err;
+      }
     }
 
     //#region PRIVATE FUNCTIONS
@@ -265,16 +338,21 @@ export class PaymentsService {
         const product_types_included = await this._updatedOrderItems(payment.order_id, true)
 
         if(product_types_included.generated_logo) {
-            // Getting logos
+            // Getting logos, zip and invoice
             const logo_urls = await this.ordersService.getOrdersLogoFilepaths(payment.order_id, true)
             const zip = await createZipFromUrls(logo_urls, `generated_logos-${payment.id_payment}`)
+            const invoicePath = await this.createStripeInvoice(stripe_id);
 
             // Send email with logo
             try {
                 await this.mailService.sendLogoEmailAfterPayment(
                     payment.id_payment,
-                    [zip]
+                    [zip, invoicePath]
                 )
+
+                // Delete attachment files
+                await fs.unlink(path.join(process.cwd(), zip));
+                await fs.unlink(path.join(process.cwd(), invoicePath));
             } catch {
                 this.logger.warn(`[PaymentsService._completePayment] Sending confirmation email for payment ${payment.id_payment} failed. Adding it into the queue.`, { metadata: { payment_id: payment.id_payment } })
                 
