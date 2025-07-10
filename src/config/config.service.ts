@@ -9,8 +9,8 @@ export enum CONFIG_OPTIONS {
 @Injectable()
 export class ConfigService {
     private readonly PROMPTED_LOGO_FILEPATH = 'public/generated'
-    private readonly CHATGPT_MODEL = 'gpt-4'
-    private readonly AMOUNT_OF_PICS_TO_GENERATE = 1
+    private readonly CHATGPT_MODEL = 'gpt-4o'
+    private readonly AMOUNT_OF_PICS_TO_GENERATE = 2
 
     async get(key: CONFIG_OPTIONS) {
         switch(key) {

@@ -94,22 +94,46 @@ export class ImageGeneratorService {
             things_to_exclude: body.things_to_exclude,
             logo_resolution: body.logo_resolution,
             amount_to_generate: amount,
-            whole_prompt: this.promptsService.createWholePrompt(body, amount, 2)
+            whole_prompt: this.promptsService.createWholePrompt(body, amount, 3)
         })
 
         // Creating prompts for Flux through ChatGPT
         const response = await this._callToChatGPTApi(prompt.whole_prompt)
-
-        // Retrieving each prompt for Flux
-        let prompts_array =[]
         const rawContent = response.choices[0].message.content;
-        const cleaned = rawContent
-          .trim()
-          .replace(/\n/g, '')    
-          .replace(/\t/g, '')    
-        
-        prompts_array = JSON.parse(amount > 1 ? rawContent : cleaned);
 
+        // Clean common formatting issues
+  const jsonStart = rawContent.indexOf('[');
+  const jsonEnd = rawContent.lastIndexOf(']') + 1;
+
+  if (jsonStart === -1 || jsonEnd === -1) {
+    console.error('Invalid JSON response from ChatGPT:', rawContent);
+    throw new InternalErrorException('ChatGPT response is not a valid JSON array.');
+  }
+
+  const jsonString = rawContent.slice(jsonStart, jsonEnd);
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch (error) {
+    console.error('Failed to parse ChatGPT response:', error.message);
+    throw new InternalErrorException('ChatGPT returned malformed JSON.');
+  }
+
+  // Ensure it's an array of strings or convert from objects
+  let prompts_array: string[];
+  if (Array.isArray(parsed)) {
+    if (typeof parsed[0] === 'string') {
+      prompts_array = parsed;
+    } else if (parsed[0]?.description) {
+      prompts_array = parsed.map((item) => item.description);
+    } else {
+      console.warn('[ChatGPT Output]', JSON.stringify(parsed, null, 2));
+
+      throw new InternalErrorException('ChatGPT response items must be strings or objects with `description`.');
+    }
+  } else {
+    throw new InternalErrorException('ChatGPT response must be a JSON array.');
+  }
         // Saving ChatGPT generated prompts
         const originalMetadata = prompt.metadata && typeof prompt.metadata === 'object'
           ? prompt.metadata
@@ -231,6 +255,7 @@ export class ImageGeneratorService {
       } catch (error) {
         console.error(`[FLUX GENERATION] Image generation failed at ${position}`);
         console.error(' * Error:', error);
+
         throw new InternalErrorException(
           'Failed to generate images via Flux',
         );
@@ -243,8 +268,8 @@ export class ImageGeneratorService {
           this.BLACK_FOREST_API_URL + this.BLACK_FOREST_MODEL,
           {
             prompt: prompt,
-            aspect_ratio: '1:1',
-            num_images: 1,
+            height: 1024,
+            width: 1024
           },
           {
             headers: {
