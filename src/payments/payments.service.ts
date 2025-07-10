@@ -266,7 +266,7 @@ export class PaymentsService {
 
         if(product_types_included.generated_logo) {
             // Getting logos
-            const logo_urls = await this.ordersService.getOrdersLogoFilepaths(payment.order_id)
+            const logo_urls = await this.ordersService.getOrdersLogoFilepaths(payment.order_id, true)
             const zip = await createZipFromUrls(logo_urls, `generated_logos-${payment.id_payment}`)
 
             // Send email with logo

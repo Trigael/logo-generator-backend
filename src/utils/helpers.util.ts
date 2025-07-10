@@ -37,7 +37,7 @@ export async function createZipFromUrls(imageUrls: string[], outputName: string)
   const output = fs.createWriteStream(zipPath);
   const archive = archiver('zip', { zlib: { level: 9 } });
 
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     output.on('close', () => {
       console.log(`[createZipFromUrls] ZIP created: ${zipPath}`);
       resolve(`/${ZIP_FILEPATH}/${outputName}.zip`.replace(/\\/g, '/'));
@@ -50,17 +50,17 @@ export async function createZipFromUrls(imageUrls: string[], outputName: string)
 
     archive.pipe(output);
 
-    Promise.all(
-      imageUrls.map(async (url) => {
-        try {
-          const response = await axios.get(url, { responseType: 'arraybuffer' });
-          const filename = basename(url);
-          archive.append(response.data, { name: filename });
-          console.log(`[createZipFromUrls] Added: ${filename}`);
-        } catch (err) {
-          console.warn(`[createZipFromUrls] Failed to fetch: ${url}`, err);
-        }
-      }),
-    ).then(() => archive.finalize());
+    for (const url of imageUrls) {
+      try {
+        const response = await axios.get(url, { responseType: 'arraybuffer' });
+        const filename = basename(url.split('?')[0]); // odstraní query parametry
+        archive.append(response.data, { name: filename });
+        console.log(`[createZipFromUrls] Added: ${filename}`);
+      } catch (err) {
+        console.warn(`[createZipFromUrls] Failed to fetch: ${url}`, err);
+      }
+    }
+
+    archive.finalize();
   });
 }
