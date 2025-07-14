@@ -6,6 +6,7 @@ services:
     networks:
       - ai-logo-caddy
       - caddy-shared-swarm
+      - app-net
     secrets:
       - AI_TOOL_KEY_${SHORT_SHA_SAFE}
       - FRONTEND_URL_${SHORT_SHA_SAFE}
@@ -78,6 +79,8 @@ networks:
   ai-logo-caddy:
     external: true
   caddy-shared-swarm:
+    external: true
+  app-net:
     external: true
 
 secrets:

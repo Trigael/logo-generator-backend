@@ -122,6 +122,20 @@ jobs:
           source: docker-stack.yaml
           target: /home/deploy/
 
+      - name: Ensure Redis network and stack exist
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.TARGET_HOST }}
+          username: deploy
+          key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "Creating overlay network app-net if missing..."
+            docker network ls | grep app-net || docker network create --driver overlay app-net
+        
+            echo "Deploying Redis stack..."
+            docker stack deploy -c ~/docker-stack.redis.yml redis
+
       - name: Deploy docker stack
         uses: appleboy/ssh-action@master
         with:
@@ -146,7 +160,7 @@ jobs:
             echo "Generating stack file with GIT_COMMIT_HASH=$GIT_COMMIT_HASH"
             envsubst '${DB_URL_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
 
-            echo "📦 Deploying docker stack..."
+            echo "Deploying docker stack..."
             docker stack deploy -c ~/docker-stack.generated.yaml --with-registry-auth ai-logo-generator
 
       - name: Deploy docker stack
@@ -160,8 +174,8 @@ jobs:
             GIT_COMMIT_HASH=${{ github.sha }}
             SHORT_SHA_SAFE=${{ github.sha }}
           script: |
-            echo "🧼 Deleting all old Docker secrets..."
+            echo "Deleting all old Docker secrets..."
             docker secret ls -q | xargs -r docker secret rm
                       
-            echo "🧼 Deleting all unused Docker image..."
+            echo "Deleting all unused Docker image..."
             docker image prune -a -f
