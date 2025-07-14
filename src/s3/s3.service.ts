@@ -6,6 +6,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
+import { CONFIG_OPTIONS, ConfigService } from 'src/config/config.service';
 import { InternalErrorException } from 'src/utils/exceptios';
 
 import { getSecret } from 'src/utils/helpers.util';
@@ -13,12 +14,14 @@ import { getSecret } from 'src/utils/helpers.util';
 @Injectable()
 export class S3Service {
   private readonly bucket_endpoint = 'https://nbg1.your-objectstorage.com'
-  private readonly bucket_name = 'logonest-ai'
 
   private readonly s3: S3Client;
   private readonly bucket: string;
+  private bucket_name: string;
 
-  constructor() {
+  constructor(
+    private readonly config: ConfigService,
+  ) {
     this.bucket = this.bucket_name;
     this.s3 = new S3Client({
       region: 'us-east-1',
@@ -29,6 +32,10 @@ export class S3Service {
       },
       forcePathStyle: true, 
     });
+  }
+
+  async onModuleInit() {
+    this.bucket_name = await this.config.get(CONFIG_OPTIONS.BUCKET_NAME) as string;
   }
 
   async uploadImage(buffer: Buffer, key: string, contentType = 'image/png') {

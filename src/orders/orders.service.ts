@@ -1,6 +1,7 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Currencies, Orders, Prisma } from '@prisma/client';
 import { connect } from 'http2';
+import { CONFIG_OPTIONS, ConfigService } from 'src/config/config.service';
 import { DatabaseService } from 'src/database/database.service';
 import { LogoService } from 'src/logo/logo.service';
 import { PricesService } from 'src/prices/prices.service';
@@ -13,14 +14,21 @@ import { Order_item } from 'src/utils/types.util';
 
 @Injectable()
 export class OrdersService {
+    private BUCKET_NAME: string;
+
     constructor(
         private readonly db: DatabaseService,
         private readonly pricesService: PricesService,
         private readonly productTypesService: ProductTypesService,
+        private readonly config: ConfigService,
 
         @Inject(forwardRef(() => LogoService))
         private readonly logoService: LogoService,
     ) {}
+
+    async onModuleInit() {
+      this.BUCKET_NAME = await this.config.get(CONFIG_OPTIONS.BUCKET_NAME) as string;
+    }
 
     async createOrder(
         user_id: number,
@@ -94,7 +102,7 @@ export class OrdersService {
         for(let i = 0; i < order_items.length; i++) {
             const logo = await this.logoService.getArchivedLogo(order_items[i].archived_logo_id as number)
 
-            if(logo?.filepath != null) filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/logonest-ai${logo?.filepath}` : logo?.filepath)
+            if(logo?.filepath != null) filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/${this.BUCKET_NAME}${logo?.filepath}` : logo?.filepath)
         }
         console.log(filepaths)
         return filepaths
