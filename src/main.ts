@@ -29,8 +29,6 @@ async function bootstrap() {
 
   const sessionMiddleware = new SessionMiddleware(sessionService, requestContext);
   const connectSessionMiddleware = new ConnectSessionMiddleware(requestContext, usersService, sessionService);
-  
-  app.setGlobalPrefix('api');
 
   app.use(express.json()); 
   app.use(express.urlencoded({ extended: true }));
