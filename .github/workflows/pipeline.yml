@@ -79,28 +79,7 @@ jobs:
       
       - name: Push Docker secrets to server
         uses: appleboy/ssh-action@master
-        env:
-          SHORT_SHA_SAFE: ${{ github.sha }}
-          FRONTEND_URL_MAIN: ${{ secrets.FRONTEND_URL }}
-          FRONTEND_URL_STAGING: ${{ secrets.FRONTEND_URL_STAGING }}
-          BACKEND_URL_MAIN: ${{ secrets.BACKEND_URL }}
-          BACKEND_URL_STAGING: ${{ secrets.BACKEND_URL_STAGING }}
-          STRIPE_PUBLISHABLE_KEY_MAIN: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_PUBLISHABLE_KEY_STAGING: ${{ secrets.STRIPE_PUBLISHABLE_KEY_STAGING }}
-          STRIPE_SECRET_KEY_MAIN: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_SECRET_KEY_STAGING: ${{ secrets.STRIPE_SECRET_KEY_STAGING }}
-          OPENAI_API_KEY_MAIN: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_API_KEY_STAGING: ${{ secrets.OPENAI_API_KEY_STAGING }}
-          MAILJET_API_KEY_MAIN: ${{ secrets.MAILJET_API_KEY }}
-          MAILJET_API_KEY_STAGING: ${{ secrets.MAILJET_API_KEY_STAGING }}
-          MAILJET_API_SECRET_MAIN: ${{ secrets.MAILJET_API_SECRET }}
-          MAILJET_API_SECRET_STAGING: ${{ secrets.MAILJET_API_SECRET_STAGING }}
-          MAILJET_TEMPLATE_ID_MAIN: ${{ secrets.MAILJET_TEMPLATE_ID }}
-          MAILJET_TEMPLATE_ID_STAGING: ${{ secrets.MAILJET_TEMPLATE_ID_STAGING }}
-          DB_TRANSACTION_URL_MAIN: ${{ secrets.DB_TRANSACTION_URL }}
-          DB_TRANSACTION_URL_STAGING: ${{ secrets.DB_TRANSACTION_URL_STAGING }}
-          BLACK_FOREST_API_KEY_MAIN: ${{ secrets.BLACK_FOREST_API_KEY }}
-          BLACK_FOREST_API_KEY_STAGING: ${{ secrets.BLACK_FOREST_API_KEY_STAGING }}
+
         with:
           host: ${{ env.TARGET_HOST }}
           username: deploy
@@ -108,45 +87,25 @@ jobs:
           port: 22
           script: |
             set -e
-
+            
             export SHORT_SHA_SAFE=$(echo "${{ github.sha }}" | cut -c1-12)
 
-            BRANCH_NAME=$(echo "${GITHUB_REF##*/}")
-            if [ "$BRANCH_NAME" = "staging" ]; then
-              SECRET_SUFFIX="_STAGING"
-            else
-              SECRET_SUFFIX="_MAIN"
-            fi
-
-            FRONTEND_URL_VAR="FRONTEND_URL${SECRET_SUFFIX}"
-            BACKEND_URL_VAR="BACKEND_URL${SECRET_SUFFIX}"
-            STRIPE_SECRET_KEY_VAR="STRIPE_SECRET_KEY${SECRET_SUFFIX}"
-            STRIPE_PUBLISHABLE_KEY_VAR="STRIPE_PUBLISHABLE_KEY${SECRET_SUFFIX}"
-            OPENAI_API_KEY_VAR="OPENAI_API_KEY${SECRET_SUFFIX}"
-            MAILJET_API_KEY_VAR="MAILJET_API_KEY${SECRET_SUFFIX}"
-            MAILJET_API_SECRET_VAR="MAILJET_API_SECRET${SECRET_SUFFIX}"
-            MAILJET_TEMPLATE_ID_VAR="MAILJET_TEMPLATE_ID${SECRET_SUFFIX}"
-            DB_TRANSACTION_URL_VAR="DB_TRANSACTION_URL${SECRET_SUFFIX}"
-            BLACK_FOREST_API_KEY_VAR="BLACK_FOREST_API_KEY${SECRET_SUFFIX}"
-
-            echo FRONTEND_URL_VAR
-
-            echo -n "${{ secrets.OPENAI_API_KEY }}" | docker secret create OPENAI_API_KEY_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.FRONTEND_URL }}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.BACKEND_URL }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.OPENAI_API_KEY || secrets.OPENAI_API_KEY_STAGING }}" | docker secret create OPENAI_API_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.FRONTEND_URL || secrets.FRONTEND_URL_STAGING }}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.BACKEND_URL_STAGING || secrets.BACKEND_URL_STAGING }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.REDIS_URL }}" | docker secret create REDIS_URL_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.STRIPE_PUBLISHABLE_KEY }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.STRIPE_SECRET_KEY }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.MAILJET_API_KEY }}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.MAILJET_API_SECRET }}" | docker secret create MAILJET_API_SECRET_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.STRIPE_PUBLISHABLE_KEY || secrets.STRIPE_PUBLISHABLE_KEY_STAGING }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.STRIPE_SECRET_KEY || secrets.STRIPE_SECRET_KEY_STAGING }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.MAILJET_API_KEY || secrets.MAILJET_API_KEY_STAGING }}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.MAILJET_API_SECRET || secrets.MAILJET_API_SECRET_STAGING }}" | docker secret create MAILJET_API_SECRET_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.MAILJET_FROM_EMAIL }}" | docker secret create MAILJET_FROM_EMAIL_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.MAILJET_TEMPLATE_ID }}" | docker secret create MAILJET_TEMPLATE_ID_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.MAILJET_TEMPLATE_ID || secrets.MAILJET_TEMPLATE_ID_STAGING }}" | docker secret create MAILJET_TEMPLATE_ID_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.SENTRY_DSN }}" | docker secret create SENTRY_DSN_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.LOKI_USERNAME }}" | docker secret create LOKI_USERNAME_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.LOKI_PASSWORD }}" | docker secret create LOKI_PASSWORD_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.DB_TRANSACTION_URL }}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.DB_TRANSACTION_URL || secrets.DB_TRANSACTION_URL_STAGING }}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.HF_API_KEY }}" | docker secret create HF_API_KEY_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.BLACK_FOREST_API_KEY }}" | docker secret create BLACK_FOREST_API_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.BLACK_FOREST_API_KEY || secrets.BLACK_FOREST_API_KEY_STAGING }}" | docker secret create BLACK_FOREST_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.HETZNER_SECRET_KEY }}" | docker secret create HETZNER_SECRET_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.HETZNER_ACCESS_KEY }}" | docker secret create HETZNER_ACCESS_KEY_$SHORT_SHA_SAFE -
 
