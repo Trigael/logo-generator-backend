@@ -81,6 +81,14 @@ jobs:
         uses: appleboy/ssh-action@master
         env:
           SHORT_SHA_SAFE: ${{ github.sha }}
+          FRONTEND_URL_MAIN: ${{ secrets.FRONTEND_URL }}
+          FRONTEND_URL_STAGING: ${{ secrets.FRONTEND_URL_STAGING }}
+          BACKEND_URL_MAIN: ${{ secrets.BACKEND_URL }}
+          BACKEND_URL_STAGING: ${{ secrets.BACKEND_URL_STAGING }}
+          STRIPE_PUBLISHABLE_KEY_MAIN: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_PUBLISHABLE_KEY_STAGING: ${{ secrets.STRIPE_PUBLISHABLE_KEY_STAGING }}
+          STRIPE_SECRET_KEY_MAIN: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_SECRET_KEY_STAGING: ${{ secrets.STRIPE_SECRET_KEY_STAGING }}
         with:
           host: ${{ env.TARGET_HOST }}
           username: deploy
@@ -93,12 +101,26 @@ jobs:
             echo "🔍 SHORT_SHA_SAFE = $SHORT_SHA_SAFE"
             echo "🔍 AI_TOOL_KEY = ${{secrets.AI_TOOL_KEY}}"
 
+            BRANCH_NAME=$(echo "${GITHUB_REF##*/}")
+            if [ "$BRANCH_NAME" = "staging" ]; then
+              SECRET_SUFFIX="_STAGING"
+            else
+              SECRET_SUFFIX="_MAIN"
+            fi
+
+            FRONTEND_URL_VAR="FRONTEND_URL${SECRET_SUFFIX}"
+            BACKEND_URL_VAR="BACKEND_URL${SECRET_SUFFIX}"
+            STRIPE_SECRET_KEY_VAR="STRIPE_SECRET_KEY${SECRET_SUFFIX}"
+            STRIPE_PUBLISHABLE_KEY_VAR="STRIPE_PUBLISHABLE_KEY${SECRET_SUFFIX}"
+
+            echo FRONTEND_URL_VAR
+
             echo -n "${{ secrets.AI_TOOL_KEY }}" | docker secret create AI_TOOL_KEY_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.FRONTEND_URL }}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.BACKEND_URL }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
+            echo -n "$FRONTEND_URL_VAR" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
+            echo -n "$BACKEND_URL_VAR" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.REDIS_URL }}" | docker secret create REDIS_URL_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.STRIPE_PUBLISHABLE_KEY }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.STRIPE_SECRET_KEY }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
+            echo -n "!STRIPE_PUBLISHABLE_KEY_VAR" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
+            echo -n "!STRIPE_SECRET_KEY_VAR" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.MAILJET_API_KEY }}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.MAILJET_API_SECRET }}" | docker secret create MAILJET_API_SECRET_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.MAILJET_FROM_EMAIL }}" | docker secret create MAILJET_FROM_EMAIL_$SHORT_SHA_SAFE -
