@@ -1,4 +1,17 @@
 services:
+  redis:
+      image: redis:7-alpine
+      ports:
+        - "6379:6379"
+      volumes:
+        - redis-data:/data
+      command: ["redis-server", "--appendonly", "yes"]
+      deploy:
+        restart_policy:
+          condition: on-failure
+      networks:
+        - app-net
+
   web:
     image: ghcr.io/trigael/ai-logo-generator:${GIT_COMMIT_HASH}
     ports:
@@ -74,6 +87,7 @@ services:
 volumes:
   db-data:
   letsencrypt:
+  redis-data:
 
 networks:
   ai-logo-caddy:
@@ -81,7 +95,7 @@ networks:
   caddy-shared-swarm:
     external: true
   app-net:
-    external: true
+    driver: overlay
 
 secrets:
   OPENAI_API_KEY_${SHORT_SHA_SAFE}:

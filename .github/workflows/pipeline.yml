@@ -131,22 +131,22 @@ jobs:
 
             echo FRONTEND_URL_VAR
 
-            echo -n "${OPENAI_API_KEY_VAR}" | docker secret create OPENAI_API_KEY_$SHORT_SHA_SAFE -
-            echo -n "${FRONTEND_URL_VAR}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
-            echo -n "${BACKEND_URL_VAR}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.OPENAI_API_KEY }}" | docker secret create OPENAI_API_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.FRONTEND_URL }}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.BACKEND_URL }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.REDIS_URL }}" | docker secret create REDIS_URL_$SHORT_SHA_SAFE -
-            echo -n "${STRIPE_PUBLISHABLE_KEY_VAR}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
-            echo -n "${STRIPE_SECRET_KEY_VAR}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
-            echo -n "${MAILJET_API_KEY_VAR}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE -
-            echo -n "${MAILJET_API_SECRET_VAR}" | docker secret create MAILJET_API_SECRET_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.STRIPE_PUBLISHABLE_KEY }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.STRIPE_SECRET_KEY }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.MAILJET_API_KEY }}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.MAILJET_API_SECRET }}" | docker secret create MAILJET_API_SECRET_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.MAILJET_FROM_EMAIL }}" | docker secret create MAILJET_FROM_EMAIL_$SHORT_SHA_SAFE -
-            echo -n "${MAILJET_TEMPLATE_ID_VAR}" | docker secret create MAILJET_TEMPLATE_ID_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.MAILJET_TEMPLATE_ID }}" | docker secret create MAILJET_TEMPLATE_ID_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.SENTRY_DSN }}" | docker secret create SENTRY_DSN_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.LOKI_USERNAME }}" | docker secret create LOKI_USERNAME_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.LOKI_PASSWORD }}" | docker secret create LOKI_PASSWORD_$SHORT_SHA_SAFE -
-            echo -n "${DB_TRANSACTION_URL_VAR}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.DB_TRANSACTION_URL }}" | docker secret create DB_TRANSACTION_URL_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.HF_API_KEY }}" | docker secret create HF_API_KEY_$SHORT_SHA_SAFE -
-            echo -n "${BLACK_FOREST_API_KEY_VAR}" | docker secret create BLACK_FOREST_API_KEY_$SHORT_SHA_SAFE -
+            echo -n "${{ secrets.BLACK_FOREST_API_KEY }}" | docker secret create BLACK_FOREST_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.HETZNER_SECRET_KEY }}" | docker secret create HETZNER_SECRET_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.HETZNER_ACCESS_KEY }}" | docker secret create HETZNER_ACCESS_KEY_$SHORT_SHA_SAFE -
 
@@ -163,16 +163,6 @@ jobs:
           source: docker-stack.yaml
           target: /home/deploy/
 
-      - name: Copy Redis docker stack file
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ env.TARGET_HOST }}
-          username: deploy
-          key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
-          port: 22
-          source: docker-stack.redis.yaml
-          target: /home/deploy/
-
       - name: Ensure Redis network and stack exist
         uses: appleboy/ssh-action@master
         with:
@@ -183,9 +173,6 @@ jobs:
           script: |
             echo "Creating overlay network app-net if missing..."
             docker network ls | grep app-net || docker network create --driver overlay app-net
-        
-            echo "Deploying Redis stack..."
-            docker stack deploy -c ~/docker-stack.redis.yaml redis
 
       - name: Deploy docker stack
         uses: appleboy/ssh-action@master
@@ -214,7 +201,7 @@ jobs:
             echo "Deploying docker stack..."
             docker stack deploy -c ~/docker-stack.generated.yaml --with-registry-auth ai-logo-generator
 
-      - name: Deploy docker stack
+      - name: Delete old secrets and images
         uses: appleboy/ssh-action@master
         with:
           host: ${{ env.TARGET_HOST }}
