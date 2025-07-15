@@ -12,7 +12,7 @@ import { S3Module } from 'src/s3/s3.module';
     PromptsModule,
     S3Module,
 
-    forwardRef(() => ConfigModule),
+    forwardRef(() => ConfigModule), 
   ],
   providers: [ImageGeneratorService],
   exports: [ImageGeneratorService]
