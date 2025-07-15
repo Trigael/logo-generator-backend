@@ -68,7 +68,7 @@ export class ImageGeneratorService {
 
         const headers = {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${getSecret(process.env.AI_TOOL_KEY ?? '')}`
+            "Authorization": `Bearer ${getSecret(process.env.OPENAI_API_KEY ?? '')}`
         }
 
         const response = await firstValueFrom(
@@ -169,7 +169,7 @@ export class ImageGeneratorService {
     async _callToChatGPTApi(prompt: string) {
         const headers = {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${getSecret(process.env.AI_TOOL_KEY ?? '')}`
+            "Authorization": `Bearer ${getSecret(process.env.OPENAI_API_KEY ?? '')}`
         }
 
         const data = {

@@ -8,7 +8,7 @@ services:
       - caddy-shared-swarm
       - app-net
     secrets:
-      - AI_TOOL_KEY_${SHORT_SHA_SAFE}
+      - OPENAI_API_KEY_${SHORT_SHA_SAFE}
       - FRONTEND_URL_${SHORT_SHA_SAFE}
       - BACKEND_URL_${SHORT_SHA_SAFE}
       - REDIS_URL_${SHORT_SHA_SAFE}
@@ -37,7 +37,7 @@ services:
     environment:
       - PORT=4000
       - NODE_ENV=production
-      - AI_TOOL_KEY=/run/secrets/AI_TOOL_KEY_${SHORT_SHA_SAFE}
+      - OPENAI_API_KEY=/run/secrets/OPENAI_API_KEY_${SHORT_SHA_SAFE}
       - FRONTEND_URL=/run/secrets/FRONTEND_URL_${SHORT_SHA_SAFE}
       - BACKEND_URL=/run/secrets/BACKEND_URL_${SHORT_SHA_SAFE}
       - REDIS_URL=/run/secrets/REDIS_URL_${SHORT_SHA_SAFE}
@@ -84,7 +84,7 @@ networks:
     external: true
 
 secrets:
-  AI_TOOL_KEY_${SHORT_SHA_SAFE}:
+  OPENAI_API_KEY_${SHORT_SHA_SAFE}:
     external: true
   FRONTEND_URL_${SHORT_SHA_SAFE}:
     external: true

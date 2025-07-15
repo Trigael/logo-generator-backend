@@ -6,9 +6,9 @@ services:
       ports:
         - "4000:4000"
       secrets:
-        - AI_TOOL_KEY
+        - OPENAI_API_KEY
       environment:
-        - AI_TOOL_KEY=/run/secrets/AI_TOOL_KEY
+        - OPENAI_API_KEY=/run/secrets/OPENAI_API_KEY
         - PORT=4000
         - NODE_ENV=production
       networks:
@@ -19,5 +19,5 @@ networks:
     external: true
 
 secrets:
-  AI_TOOL_KEY:
+  OPENAI_API_KEY:
     external: true
