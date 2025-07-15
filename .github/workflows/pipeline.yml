@@ -134,6 +134,9 @@ jobs:
             echo -n "${{ secrets.HETZNER_SECRET_KEY }}" | docker secret create HETZNER_SECRET_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.HETZNER_ACCESS_KEY }}" | docker secret create HETZNER_ACCESS_KEY_$SHORT_SHA_SAFE -
 
+      - name: Ensure repo is checked out for scp
+        uses: actions/checkout@v4
+
       - name: Copy docker stack file
         uses: appleboy/scp-action@master
         with:
@@ -142,6 +145,16 @@ jobs:
           key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
           port: 22
           source: docker-stack.yaml
+          target: /home/deploy/
+
+      - name: Copy Redis docker stack file
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ env.TARGET_HOST }}
+          username: deploy
+          key: ${{ github.ref == 'refs/heads/main' && secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY || secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: 22
+          source: docker-stack.redis.yaml
           target: /home/deploy/
 
       - name: Ensure Redis network and stack exist
@@ -156,7 +169,7 @@ jobs:
             docker network ls | grep app-net || docker network create --driver overlay app-net
         
             echo "Deploying Redis stack..."
-            docker stack deploy -c ~/docker-stack.redis.yml redis
+            docker stack deploy -c ~/docker-stack.redis.yaml redis
 
       - name: Deploy docker stack
         uses: appleboy/ssh-action@master
