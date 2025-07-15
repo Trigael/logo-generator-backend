@@ -172,7 +172,9 @@ jobs:
           port: 22
           script: |
             echo "Creating overlay network app-net if missing..."
-            docker network ls | grep app-net || docker network create --driver overlay app-net
+            if ! docker network inspect app-net >/dev/null 2>&1; then
+              docker network create --driver overlay app-net
+            fi
 
       - name: Deploy docker stack
         uses: appleboy/ssh-action@master
