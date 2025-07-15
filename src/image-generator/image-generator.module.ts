@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ImageGeneratorService } from './image-generator.service';
 
 import { HttpModule } from '@nestjs/axios';
@@ -10,8 +10,9 @@ import { S3Module } from 'src/s3/s3.module';
   imports: [
     HttpModule, 
     PromptsModule,
-    ConfigModule,
     S3Module,
+
+    forwardRef(() => ConfigModule),
   ],
   providers: [ImageGeneratorService],
   exports: [ImageGeneratorService]

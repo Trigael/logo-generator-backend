@@ -6,13 +6,15 @@ import { DatabaseModule } from 'src/database/database.module';
 import { PricesModule } from 'src/prices/prices.module';
 import { ProductTypesModule } from 'src/product_types/product_types.module';
 import { LogoModule } from 'src/logo/logo.module';
+import { ConfigModule } from 'src/config/config.module';
 
 @Module({
   imports: [
     DatabaseModule,
     PricesModule,
     ProductTypesModule,
-    forwardRef(() => LogoModule)
+    ConfigModule,
+    forwardRef(() => LogoModule),
   ],
   providers: [OrdersService],
   exports: [OrdersService],

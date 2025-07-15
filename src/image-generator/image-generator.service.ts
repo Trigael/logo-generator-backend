@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Prompts } from '@prisma/client';
 import { firstValueFrom } from 'rxjs';
 import { access, mkdir } from 'fs/promises';
@@ -33,8 +33,10 @@ export class ImageGeneratorService {
     constructor(
         private readonly httpService: HttpService,
         private readonly promptsService: PromptsService,
-        private readonly config: ConfigService,
         private readonly s3: S3Service,
+
+        @Inject(forwardRef(() => ConfigService))
+        private readonly config: ConfigService,
     ) {}
 
     async onModuleInit() {
