@@ -92,7 +92,7 @@ jobs:
 
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.OPENAI_API_KEY || secrets.OPENAI_API_KEY_STAGING }}" | docker secret create OPENAI_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.FRONTEND_URL || secrets.FRONTEND_URL_STAGING }}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
-            echo -n "${{ github.ref == 'refs/heads/main' && secrets.BACKEND_URL_STAGING || secrets.BACKEND_URL_STAGING }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
+            echo -n "${{ github.ref == 'refs/heads/main' && secrets.BACKEND_URL || secrets.BACKEND_URL_STAGING }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.REDIS_URL }}" | docker secret create REDIS_URL_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.STRIPE_PUBLISHABLE_KEY || secrets.STRIPE_PUBLISHABLE_KEY_STAGING }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.STRIPE_SECRET_KEY || secrets.STRIPE_SECRET_KEY_STAGING }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
