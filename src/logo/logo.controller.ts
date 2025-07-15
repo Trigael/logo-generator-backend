@@ -41,7 +41,6 @@ export class LogoController {
     return {
       product: 'generated_logo',
       price,
-      message: 'Hello world'
     }
   }
 }
