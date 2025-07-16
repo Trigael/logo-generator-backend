@@ -160,7 +160,7 @@ export class ImageGeneratorService {
         );
 
         return {
-            prompt: prompt,
+            id_prompt: prompt.id_prompt,
             data: generated_imgs
         }
     }
