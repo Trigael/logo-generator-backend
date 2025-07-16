@@ -169,22 +169,26 @@ export class ImageGeneratorService {
      * PRIVATE FUNCTIONS FOR AI MODELS
      */
     async _callToChatGPTApi(prompt: string) {
-        const headers = {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${getSecret(process.env.OPENAI_API_KEY ?? '')}`
-        }
+        try {
+          const headers = {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${getSecret(process.env.OPENAI_API_KEY ?? '')}`
+          }
 
-        const data = {
-            model: this.CHATGPT_MODEL,
-            messages: [
-              { role: "user", content: prompt }
-            ]
-        }
+          const data = {
+              model: this.CHATGPT_MODEL,
+              messages: [
+                { role: "user", content: prompt }
+              ]
+          }
 
-        const response = await firstValueFrom(
-            this.httpService.post(this.OPEN_AI_API_URL + 'chat/completions', data, {headers})
-        )
-        return response.data
+          const response = await firstValueFrom(
+              this.httpService.post(this.OPEN_AI_API_URL + 'chat/completions', data, {headers})
+          )
+          return response.data
+        } catch (error) {
+          throw new InternalErrorException(`[ImageGenerator] OpenAI request failed. Err: ${error}`)
+        }
     }
     
     async _generateThroughFlux1DevOnHugginFace(prompts: string[]): Promise<string[]> {
