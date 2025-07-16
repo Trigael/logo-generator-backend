@@ -68,37 +68,6 @@ export class PaymentsService {
             data: { state: payment_state }
         })
     }
-    
-    // async createPayment(
-    //     amount: number,
-    //     currency: Currencies,
-    //     email: string,
-    //     user_id: number,
-    //     price_id: string,
-    // ) {
-    //     // Create log in DB
-    //     const db_response: any = await this.db.payments.create({ 
-    //         data: { user_id, price: amount, currency: `${currency.toUpperCase()}` as Currencies }
-    //     })
-
-    //     // Create payment in Stripe
-    //     const stripe_repsonse = await this._createStripeTransaction(
-    //         db_response.payment_id, 
-    //         email, 
-    //         [
-    //             {
-    //                 price: price_id,
-    //                 quantity: 1,
-    //             }
-    //         ]
-    //     )
-
-    //     if(stripe_repsonse.success) {
-    //         await this.db.payments.update({ where: {id_payment: db_response.id_payment}, data: { stripe_id: stripe_repsonse.stripe_id } })
-    //     }
-
-    //     return stripe_repsonse
-    // }
 
     async createPaymentForLogos(order: Orders, order_items: Order_item[]): Promise<Payments> {
         const user = await this.usersService.getUser(order.user_id)

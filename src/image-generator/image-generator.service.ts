@@ -15,6 +15,7 @@ import { getSecret } from 'src/utils/helpers.util';
 import { InternalErrorException } from 'src/utils/exceptios';
 import { ConfigService, CONFIG_OPTIONS } from 'src/config/config.service';
 import { S3Service } from 'src/s3/s3.service';
+import { tryCatch } from 'bullmq';
 
 
 @Injectable()
@@ -104,38 +105,40 @@ export class ImageGeneratorService {
         const rawContent = response.choices[0].message.content;
 
         // Clean common formatting issues
-  const jsonStart = rawContent.indexOf('[');
-  const jsonEnd = rawContent.lastIndexOf(']') + 1;
+        const jsonStart = rawContent.indexOf('[');
+        const jsonEnd = rawContent.lastIndexOf(']') + 1;
 
-  if (jsonStart === -1 || jsonEnd === -1) {
-    console.error('Invalid JSON response from ChatGPT:', rawContent);
-    throw new InternalErrorException('ChatGPT response is not a valid JSON array.');
-  }
+        if (jsonStart === -1 || jsonEnd === -1) {
+          console.error('Invalid JSON response from ChatGPT:', rawContent);
+          throw new InternalErrorException('ChatGPT response is not a valid JSON array.');
+        }
+      
+        const jsonString = rawContent.slice(jsonStart, jsonEnd);
+        let parsed;
 
-  const jsonString = rawContent.slice(jsonStart, jsonEnd);
-  let parsed;
-  try {
-    parsed = JSON.parse(jsonString);
-  } catch (error) {
-    console.error('Failed to parse ChatGPT response:', error.message);
-    throw new InternalErrorException('ChatGPT returned malformed JSON.');
-  }
+        try {
+          parsed = JSON.parse(jsonString);
+        } catch (error) {
+          console.error('Failed to parse ChatGPT response:', error.message);
+          throw new InternalErrorException('ChatGPT returned malformed JSON.');
+        }
+      
+        // Ensure it's an array of strings or convert from objects
+        let prompts_array: string[];
+        if (Array.isArray(parsed)) {
+          if (typeof parsed[0] === 'string') {
+            prompts_array = parsed;
+          } else if (parsed[0]?.description) {
+            prompts_array = parsed.map((item) => item.description);
+          } else {
+            console.warn('[ChatGPT Output]', JSON.stringify(parsed, null, 2));
+          
+            throw new InternalErrorException('ChatGPT response items must be strings or objects with `description`.');
+          }
+        } else {
+          throw new InternalErrorException('ChatGPT response must be a JSON array.');
+        }
 
-  // Ensure it's an array of strings or convert from objects
-  let prompts_array: string[];
-  if (Array.isArray(parsed)) {
-    if (typeof parsed[0] === 'string') {
-      prompts_array = parsed;
-    } else if (parsed[0]?.description) {
-      prompts_array = parsed.map((item) => item.description);
-    } else {
-      console.warn('[ChatGPT Output]', JSON.stringify(parsed, null, 2));
-
-      throw new InternalErrorException('ChatGPT response items must be strings or objects with `description`.');
-    }
-  } else {
-    throw new InternalErrorException('ChatGPT response must be a JSON array.');
-  }
         // Saving ChatGPT generated prompts
         const originalMetadata = prompt.metadata && typeof prompt.metadata === 'object'
           ? prompt.metadata
@@ -269,7 +272,8 @@ export class ImageGeneratorService {
     }
   
     private async _requestImageGeneration(prompt: string): Promise<string> {
-      const response = await firstValueFrom(
+      try {
+        const response = await firstValueFrom(
         this.httpService.post(
           this.BLACK_FOREST_API_URL + this.BLACK_FOREST_MODEL,
           {
@@ -287,11 +291,15 @@ export class ImageGeneratorService {
       );
       
       const pollingUrl = response.data;
+      
       if (!pollingUrl) {
-        throw new Error('Missing polling_url in response');
+        throw new InternalErrorException(`[ImageGeneration] Missing polling_url in response`);
       }
     
       return pollingUrl;
+      } catch (error) {
+        throw new InternalErrorException(`[ImageGeneration] Failed to generate image. Error: ${error}`)
+      }
     }
   
     private async _pollForImageResult(pollingUrl) {
@@ -310,8 +318,6 @@ export class ImageGeneratorService {
       
         const { status, result } = response.data;
       
-        // this.logger.debug(`[BlackForest] Poll attempt ${attempt + 1}, status: ${status}`);
-      
         if (status === 'Ready') {
           const imageUrl = result?.sample;
           if (!imageUrl) {
@@ -325,13 +331,13 @@ export class ImageGeneratorService {
         }
       
         if (status === 'Error' || status === 'Failed') {
-          throw new Error(`Image generation failed: ${status}`);
+          throw new InternalErrorException(`[ImageRetrieval] Image generation failed: ${status}`);
         }
       
         await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
       }
     
-      throw new Error('Polling timeout: Image generation did not complete in time');
+      throw new InternalErrorException('[ImageRetrieval] Polling timeout: Image generation did not complete in time');
     }
 
     async _downloadImage(imageUrl: string, filename: string): Promise<string> {
@@ -348,11 +354,17 @@ export class ImageGeneratorService {
       const writer = createWriteStream(filePath);
 
       // Downloading image
-      const response = await firstValueFrom(
-        this.httpService.get(imageUrl, {
-          responseType: 'stream',
-        }),
-      );
+      let response;
+
+      try {
+        response = await firstValueFrom(
+          this.httpService.get(imageUrl, {
+            responseType: 'stream',
+          }),
+        );
+      } catch (error) {
+        throw new InternalErrorException(`[Image Download] Image download failed. Error: ${error}`)
+      }
 
       response.data.pipe(writer);
 
