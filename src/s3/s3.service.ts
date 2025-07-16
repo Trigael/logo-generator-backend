@@ -15,13 +15,16 @@ import { getSecret } from 'src/utils/helpers.util';
 export class S3Service {
   private readonly bucket_endpoint = 'https://nbg1.your-objectstorage.com'
 
-  private readonly s3: S3Client;
-  private readonly bucket: string;
+  private s3: S3Client;
+  private bucket: string;
   private bucket_name: string;
 
   constructor(
     private readonly config: ConfigService,
-  ) {
+  ) {}
+
+  async onModuleInit() {
+    this.bucket_name = await this.config.get(CONFIG_OPTIONS.BUCKET_NAME) as string;
     this.bucket = this.bucket_name;
     this.s3 = new S3Client({
       region: 'us-east-1',
@@ -34,12 +37,9 @@ export class S3Service {
     });
   }
 
-  async onModuleInit() {
-    this.bucket_name = await this.config.get(CONFIG_OPTIONS.BUCKET_NAME) as string;
-  }
-
   async uploadImage(buffer: Buffer, key: string, contentType = 'image/png') {
     try {
+      console.log(this.bucket_name)
       const command = new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
