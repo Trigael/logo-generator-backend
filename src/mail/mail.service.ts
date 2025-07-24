@@ -97,7 +97,10 @@ export class MailService {
           to: user.email,
           subject: `[${payment.id_payment}] Potvrzení platby`,
           template_id: Number(getSecret(process.env.MAILJET_TEMPLATE_ID ?? '')),
-          variables: logo_filepaths,
+          variables: {
+            year: (new Date()).getFullYear()
+          },
+          attachment: logo_filepaths,
         }
 
         const email_id = await this.saveEmailReport(email_data)
@@ -107,7 +110,7 @@ export class MailService {
             email_data.subject,
             email_data.template_id,
             undefined,
-            email_data.variables,
+            email_data.attachment,
             email_id.id_mails
         )
     }
