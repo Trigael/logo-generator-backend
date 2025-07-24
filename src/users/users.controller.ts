@@ -1,5 +1,6 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { SaveUserDto } from './dto/save-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -7,8 +8,8 @@ export class UsersController {
       private readonly usersService: UsersService,
     ) {}
     
-    @Get('get/:email')
-    getOrCreateGuestUser(@Param('email') email: string) {
-        return this.usersService.getOrCreateGuestUser(email)
+    @Post('save')
+    getOrCreateGuestUser(@Body() body: SaveUserDto) {
+        return this.usersService.getOrCreateGuestUser(body.email)
     }
 }
