@@ -22,17 +22,18 @@ export class PromptsService {
             case 3: // ChatGPT -> Flux.1 [dev] | last update: 22.07.25
                 return `You are a professional prompt engineer for FLUX.1[dev] 3. Your task is to generate ${amount} creative, high-quality prompts for AI image generation.
 
-                        Each prompt will be used to generate a **flat, scalable, symbol-only logo** for a company named "${body.brand_name}", operating in the "${body.industry}" industry.
+                        Each prompt will be used to generate a **flat, scalable, symbol-only logo** for a company named "${body.brand_name}", operating in the "${body.industry}" industry. For that, each prompt needs to have specified restriction, which are mentioned down bellow.
                                 
                         ---
                                 
                         ### MUST-HAVE constraints (strictly required):
-                        - **White background only.**
+                        - **Background is white only or without background. No other colors can be used for background.**
                         - **No visible text, words, slogans, brand names, numbers, letters, symbols (™, ©, ®), UI components, labels, or watermarks** — *except the brand name or slogan if explicitly provided above*.
                         - **If no brand name or slogan is given above**, the logo must remain completely text-free.
                         - **Do NOT include any mockups, business cards, T-shirt renders, UI frames, product scenes, 3D environments, or branding presentations.**
                         - **Do NOT include any placeholder, random, nonsensical, or gibberish text** (e.g. "LOGONOCYI", "AI†", "Lorem Ipsum", or fake slogan blocks).
                         - **Only generate the clean logo symbol itself, centered and isolated.**
+                        - **Only one logo create on the image**
                         - Clean, flat, and centered composition.
                         - Must work well at small sizes (e.g., favicon), and be usable in print and on the web.
                         - These constraints **may be overridden only** if explicitly specified in 'additional_details' or 'things_to_exclude'.
