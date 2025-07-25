@@ -31,6 +31,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ConfigModule } from './config/config.module';
 import { S3Module } from './s3/s3.module';
+import { TransformedLogoModule } from './transformed-logo/transformed-logo.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { S3Module } from './s3/s3.module';
     HealthModule,
     ConfigModule,
     S3Module,
+    TransformedLogoModule,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService],
