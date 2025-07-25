@@ -8,6 +8,9 @@ import { join } from 'path';
 import { createWriteStream } from 'fs';
 import * as fs from 'fs';
 import * as path from 'path';
+import axios from 'axios';
+import * as FormData from 'form-data';
+import { createCanvas } from '@napi-rs/canvas';
 
 import { GenerateLogoDto } from 'src/logo/dto/generate-logo.dto';
 import { PromptsService } from 'src/prompts/prompts.service';
@@ -16,6 +19,7 @@ import { InternalErrorException } from 'src/utils/exceptios';
 import { ConfigService, CONFIG_OPTIONS } from 'src/config/config.service';
 import { S3Service } from 'src/s3/s3.service';
 import { tryCatch } from 'bullmq';
+import { GeneratedImg } from 'src/utils/types.util';
 
 
 @Injectable()
@@ -26,7 +30,7 @@ export class ImageGeneratorService {
     // Black Fores DOCS: https://docs.bfl.ai/api-reference/tasks/generate-an-image-with-flux1-[dev]
     private readonly BLACK_FOREST_API_URL = 'https://api.bfl.ai/v1/'; 
     private readonly BLACK_FOREST_API_KEY = getSecret(process.env.BLACK_FOREST_API_KEY ?? '')
-    private readonly BLACK_FOREST_MODEL = process.env.NODE_ENV != 'dev' ? 'flux-pro' : 'flux-dev'
+    private readonly BLACK_FOREST_MODEL = process.env.NODE_ENV != 'dev' ? 'flux-dev' : 'flux-dev'
 
     private PROMPTED_LOGO_FILEPATH: string
     private CHATGPT_MODEL: string
@@ -152,7 +156,7 @@ export class ImageGeneratorService {
         });
 
         // Generating images through Flux
-        const generated_imgs = await this._generateThroughFlux1(prompts_array)
+        let generated_imgs: GeneratedImg[] = await this._generateThroughFlux1(prompts_array)
 
         // Save images locally
         await Promise.all(
@@ -162,16 +166,39 @@ export class ImageGeneratorService {
           }),
         );
 
-        return {
-            id_prompt: prompt.id_prompt,
-            data: generated_imgs
+        // Create watermarked versions
+        for(let i = 0; i < generated_imgs.length; i++) {
+          generated_imgs[i].watermarked_url = await this.watermarkImage(generated_imgs[i].image_url, generated_imgs[i].id + `_` + Date.now())
         }
+
+        return {
+          id_prompt: prompt.id_prompt,
+          data: generated_imgs
+        }
+    }
+
+    async watermarkImage(image_url: string, name: string): Promise<string> {
+      try {
+        // Download picture
+        const jpgRes = await axios.get(image_url, { responseType: 'arraybuffer' });
+
+        // Add watermark
+        const watermarked = await this._addDiagonalWatermark(jpgRes.data, 'LOGONEST.AI');
+
+        // Upload watermarked image onto bucket
+        const uploadedUrl = await this.s3.uploadImage(watermarked, 'watermarked/' + name + '.png');
+
+        return uploadedUrl;
+      } catch (error) {
+        console.error('[Watermark] Failed:', error);
+        throw new InternalErrorException(`[Watermark] Failed: ${error.message}`);
+      }
     }
 
     /**
      * PRIVATE FUNCTIONS FOR AI MODELS
      */
-    async _callToChatGPTApi(prompt: string) {
+    private async _callToChatGPTApi(prompt: string, is_edit?: boolean) {
         try {
           const headers = {
               "Content-Type": "application/json",
@@ -193,8 +220,85 @@ export class ImageGeneratorService {
           throw new InternalErrorException(`[ImageGenerator] OpenAI request failed. Err: ${error}`)
         }
     }
+
+    private async _addDiagonalWatermark(imageBuffer: Buffer, watermarkText: string): Promise<Buffer> {
+      const sharp = require('sharp');
+      const width = 1024;
+      const height = 1024;
+
+      const canvas = createCanvas(width, height);
+      const ctx = canvas.getContext('2d');
+
+      // Watermark text style
+      ctx.font = 'bold 32px sans-serif';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.12)'; 
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Canvas rotation and translation
+      ctx.translate(width / 2, height / 2);
+      ctx.rotate(-Math.PI / 4);
+
+      // Gap between rows and columns in watermark grid
+      const stepX = 250;
+      const stepY = 200
+
+      // Creating grid for diagonals
+      for (let x = -width * 2; x < width * 2; x += stepX) {
+        for (let y = -height * 2; y < height * 2; y += stepY) {
+          ctx.fillText(watermarkText, x, y);
+        }
+      }
     
-    async _generateThroughFlux1DevOnHugginFace(prompts: string[]): Promise<string[]> {
+      const watermarkBuffer = canvas.toBuffer('image/png');
+    
+      const result = await sharp(imageBuffer)
+        .composite([{ input: watermarkBuffer, blend: 'over' }])
+        .png()
+        .toBuffer();
+    
+      return result;
+    }
+
+    private async _editImgWithDallE(imgUrl: string, prompt: string) {
+      try {
+        console.log('[ImageEdit] Downloading image from URL:', imgUrl);
+        const sharp = require('sharp');
+        // 1. Stáhnout JPG
+        const jpgRes = await axios.get(imgUrl, { responseType: 'arraybuffer' });
+      
+        // 2. Převést na PNG s alpha kanálem
+        const pngBuffer = await sharp(jpgRes.data)
+          .resize(1024, 1024)
+          .flatten({ background: { r: 255, g: 255, b: 255, alpha: 0 } })
+          .ensureAlpha()
+          .png()
+          .toBuffer();
+      
+        // 3. Vytvořit form-data
+        const form = new FormData();
+
+        form.append('image', pngBuffer, { filename: 'image.png', contentType: 'image/png' });
+        form.append('prompt', prompt);
+        form.append('n', '1');
+        form.append('size', '1024x1024');
+      
+        // 4. Odeslat požadavek na OpenAI
+        const response = await axios.post(`${this.OPEN_AI_API_URL}` + `images/edits`, form, {
+          headers: {
+            ...form.getHeaders(),
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+        });
+      
+        return response.data;
+      } catch (error) {
+        console.error(error.response?.data || error.message);
+        throw new Error(`[ImageEdit] Failed: ${error.message}`);
+      }
+    }
+    
+    private async _generateThroughFlux1DevOnHugginFace(prompts: string[]): Promise<string[]> {
         const results: string[] = [];
 
         try {
@@ -244,7 +348,7 @@ export class ImageGeneratorService {
         return results;
     }
 
-    async _generateThroughFlux1(prompts: string[]) {
+    private async _generateThroughFlux1(prompts: string[]) {
       let position = 'polling url creation'
 
       try {
@@ -279,7 +383,8 @@ export class ImageGeneratorService {
           {
             prompt: prompt,
             height: 1024,
-            width: 1024
+            width: 1024,
+            prompt_upsampling: true
           },
           {
             headers: {
@@ -340,7 +445,7 @@ export class ImageGeneratorService {
       throw new InternalErrorException('[ImageRetrieval] Polling timeout: Image generation did not complete in time');
     }
 
-    async _downloadImage(imageUrl: string, filename: string): Promise<string> {
+    private async _downloadImage(imageUrl: string, filename: string): Promise<string> {
       const outputDir = path.join(process.cwd(), this.PROMPTED_LOGO_FILEPATH);
 
       // Checking for output file existence
@@ -378,7 +483,7 @@ export class ImageGeneratorService {
       }); 
     }
 
-    async _saveBase64Image(base64String: string, filename: string): Promise<string> {
+    private async _saveBase64Image(base64String: string, filename: string): Promise<string> {
       // Deleting prefix 'data:image/png;base64,'
       const base64Data = base64String.replace(/^data:image\/png;base64,/, '');
 
@@ -394,7 +499,7 @@ export class ImageGeneratorService {
       return `/generated/${filename}.png`; 
     }
 
-    async _uploadImageFromUrl(imageUrl: string, filename: string): Promise<string> {
+    private async _uploadImageFromUrl(imageUrl: string, filename: string): Promise<string> {
       const response = await firstValueFrom(
         this.httpService.get(imageUrl, { responseType: 'arraybuffer' }),
       );

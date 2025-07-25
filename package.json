@@ -24,6 +24,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",
     "@aws-sdk/s3-request-presigner": "^3.842.0",
+    "@napi-rs/canvas": "^0.1.74",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/bullmq": "^11.0.2",
     "@nestjs/common": "^11.0.1",
@@ -49,6 +50,7 @@
     "node-mailjet": "^6.0.8",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sharp": "^0.34.3",
     "stripe": "^18.2.0",
     "ua-parser-js": "^2.0.3",
     "winston": "^3.17.0",

@@ -5,3 +5,9 @@ export type Order_item = {
     price: number,
     amount: number
 }
+
+export type GeneratedImg = {
+  id: any;
+  image_url: any;
+  watermarked_url?: string;
+};

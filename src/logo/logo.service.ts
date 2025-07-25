@@ -64,7 +64,6 @@ export class LogoService {
       })
     }
 
-
     async getPromptedLogo(logo_id: number) {
       return await this.db.prompted_logos.findUnique({ 
         where: {id_prompted_logo: logo_id}
@@ -138,20 +137,30 @@ export class LogoService {
         body, 
         amount
       )
+      const new_response: { id_prompt: number, data: object[] } = {
+        id_prompt: response.id_prompt,
+        data: []
+      }
 
       for(let i = 0; i < response.data.length; i++) {
-          // Save picture into DB
-          const logo: Prompted_logos = await this.createPromptedLogo({
-            prompt: { connect: { id_prompt: response.id_prompt}},
-            id_from_model: response.data[i].id,
-            url_to_logo: response.data[i].image_url,
-            filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('generated')),
-          })
+        // Save picture into DB
+        const logo: Prompted_logos = await this.createPromptedLogo({
+          prompt: { connect: { id_prompt: response.id_prompt}},
+          id_from_model: response.data[i].id,
+          url_to_logo: response.data[i].image_url,
+          filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('generated')),
+          watermark_filepath: response.data[i].watermarked_url,
+        })
+        response.data[i].id = logo.id_prompted_logo
 
-          response.data[i].id = logo.id_prompted_logo
-        }
+        // Creating final response, only with watermarked url to image
+        new_response.data.push({
+          id: response.data[i].id,
+          image_url: response.data[i].watermarked_url
+        })
+      }
 
-      return response;
+      return new_response;
     }
 
     async updatePromptedLogo(id: number, data: Prisma.Prompted_logosUpdateInput) {
