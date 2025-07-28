@@ -12,6 +12,7 @@ import { UsersModule } from 'src/users/users.module';
 import { OrdersModule } from 'src/orders/orders.module';
 import { LoggerModule } from 'src/logger/logger.module';
 import { QueueModule } from 'src/queue/queue.module';
+import { S3Module } from 'src/s3/s3.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { QueueModule } from 'src/queue/queue.module';
     UsersModule,
     LoggerModule,
     QueueModule,
+    S3Module,
     forwardRef(() => OrdersModule),
     forwardRef(() => LogoModule),
   ],

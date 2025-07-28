@@ -17,11 +17,11 @@ import { Order_item } from 'src/utils/types.util';
 import { UsersService } from 'src/users/users.service';
 import { InternalErrorException } from 'src/utils/exceptios';
 import { OrdersService } from 'src/orders/orders.service';
-import { getCurrencySymbol, getSecret } from 'src/utils/helpers.util';
+import { getCurrencySymbol, getSecret, createZipFromUrls } from 'src/utils/helpers.util';
 import { LoggerService } from 'src/logger/logger.service';
 import { QueueService } from 'src/queue/queue.service';
+import { S3Service } from 'src/s3/s3.service';
 
-import { createZipFromUrls } from 'src/utils/helpers.util'
 import axios from 'axios';
 
 @Injectable()
@@ -35,6 +35,7 @@ export class PaymentsService {
         private readonly usersService: UsersService,
         private readonly logger: LoggerService,
         private readonly queue: QueueService,
+        private readonly s3: S3Service,
 
         @Inject(forwardRef(() => LogoService))
         private readonly logoService: LogoService,
@@ -309,7 +310,7 @@ export class PaymentsService {
         if(product_types_included.generated_logo) {
             // Getting logos, zip and invoice
             const logo_urls = await this.ordersService.getOrdersLogoFilepaths(payment.order_id, true)
-            const zip = await createZipFromUrls(logo_urls, `generated_logos-${payment.id_payment}`)
+            const zip = await createZipFromUrls(logo_urls.filepaths, `generated_logos-${payment.id_payment}`)
             const invoicePath = await this.createStripeInvoice(stripe_id);
 
             // Send email with logo
@@ -322,6 +323,11 @@ export class PaymentsService {
                 // Delete attachment files
                 await fs.unlink(path.join(process.cwd(), zip));
                 await fs.unlink(path.join(process.cwd(), invoicePath));
+
+                // Delete watermarked images
+                for(let i = 0; i < logo_urls.watermarked_filepaths.length; i++) {
+                    await this.s3.deleteFile(logo_urls[i].watermarked_filepaths)
+                }
             } catch {
                 this.logger.warn(`[PaymentsService._completePayment] Sending confirmation email for payment ${payment.id_payment} failed. Adding it into the queue.`, { metadata: { payment_id: payment.id_payment } })
                 

@@ -186,9 +186,9 @@ export class ImageGeneratorService {
         const watermarked = await this._addDiagonalWatermark(jpgRes.data, 'LOGONEST.AI');
 
         // Upload watermarked image onto bucket
-        const uploadedUrl = await this.s3.uploadImage(watermarked, 'watermarked/' + name + '.png');
+        await this.s3.uploadImage(watermarked, 'watermarked/' + name + '.png');
 
-        return uploadedUrl;
+        return 'watermarked/' + name + '.png';
       } catch (error) {
         console.error('[Watermark] Failed:', error);
         throw new InternalErrorException(`[Watermark] Failed: ${error.message}`);

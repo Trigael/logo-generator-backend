@@ -1,12 +1,11 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Currencies, Orders, Prisma } from '@prisma/client';
-import { connect } from 'http2';
 import { CONFIG_OPTIONS, ConfigService } from 'src/config/config.service';
+
 import { DatabaseService } from 'src/database/database.service';
 import { LogoService } from 'src/logo/logo.service';
 import { PricesService } from 'src/prices/prices.service';
 import { ProductTypesService } from 'src/product_types/product_types.service';
-import { getSecret } from 'src/utils/helpers.util';
 
 import { Order_item } from 'src/utils/types.util';
 
@@ -95,16 +94,22 @@ export class OrdersService {
 
     async getOrdersLogoFilepaths(order_id: number, as_url?: boolean) {
         const filepaths: string[] = []
+        const watermarked_filepaths: string[] = []
         const order_items = await this.db.order_items.findMany({ 
             where: { order_id: order_id }
         })
-        console.log(order_items)
+        
         for(let i = 0; i < order_items.length; i++) {
             const logo = await this.logoService.getArchivedLogo(order_items[i].archived_logo_id as number)
+            const prompted_logo = await this.logoService.getPromptedLogo(logo?.prompted_logo_id as number)
 
             if(logo?.filepath != null) filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/${this.BUCKET_NAME}${logo?.filepath}` : logo?.filepath)
+
+            if(prompted_logo?.watermark_filepath != null) watermarked_filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/${this.BUCKET_NAME}${prompted_logo.watermark_filepath}` : prompted_logo.watermark_filepath)
         }
-        console.log(filepaths)
-        return filepaths
+        
+        return {
+            filepaths, watermarked_filepaths
+        }
     }
 }

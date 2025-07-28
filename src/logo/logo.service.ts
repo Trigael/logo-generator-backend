@@ -80,6 +80,7 @@ export class LogoService {
       targetDate.setDate(targetDate.getDate() - days);
       
       const filepaths_for_logos: string[] = []
+      const filepath_to_watermarked_logo: string[] = []
       const logos_to_delete = await this.db.prompted_logos.findMany({
         where: {
           created_at: {
@@ -92,10 +93,15 @@ export class LogoService {
       // Extracting filepaths for logos
       for(let i = 0; i < logos_to_delete.length; i++) {
         filepaths_for_logos.push(logos_to_delete[i].filepath_to_logo ?? '')
+        filepath_to_watermarked_logo.push(logos_to_delete[i].watermark_filepath ?? '')
       }
 
       // Deleting all selected images localy
       filepaths_for_logos.forEach(filepath => {
+        this.s3.deleteFile(filepath)
+      });
+
+      filepath_to_watermarked_logo.forEach(filepath => {
         this.s3.deleteFile(filepath)
       });
 
