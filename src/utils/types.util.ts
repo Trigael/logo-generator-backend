@@ -9,5 +9,5 @@ export type Order_item = {
 export type GeneratedImg = {
   id: any;
   image_url: any;
-  watermarked_url?: string;
+  watermarked_url: string;
 };

@@ -155,7 +155,7 @@ export class LogoService {
           id_from_model: response.data[i].id,
           url_to_logo: response.data[i].image_url,
           filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('generated')),
-          watermark_filepath: response.data[i].watermarked_url,
+          watermark_filepath: response.data[i].watermarked_url.substring(response.data[i].watermarked_url.indexOf('watermarked')) ,
         })
         response.data[i].id = logo.id_prompted_logo
 

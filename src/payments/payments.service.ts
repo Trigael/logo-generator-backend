@@ -89,7 +89,7 @@ export class PaymentsService {
                 currency: order.currency.toLocaleLowerCase(),
                 product_data: {
                     name: "Custom generated logo",
-                    images: images,
+                    images: images.watermarked_filepaths,
                     // description: "Handmade cotton t-shirt.",
                     // shippable: false,
                     // metadata: { "sku": "T-SHIRT-BLACK-M", "designer": "Alex" },
