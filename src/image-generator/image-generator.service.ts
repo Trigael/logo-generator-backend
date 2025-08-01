@@ -32,6 +32,8 @@ export class ImageGeneratorService {
     private readonly BLACK_FOREST_API_KEY = getSecret(process.env.BLACK_FOREST_API_KEY ?? '')
     private readonly BLACK_FOREST_MODEL = process.env.NODE_ENV != 'dev' ? 'flux-dev' : 'flux-dev'
 
+    private readonly sharp = require('sharp');
+
     private PROMPTED_LOGO_FILEPATH: string
     private CHATGPT_MODEL: string
     
@@ -185,8 +187,13 @@ export class ImageGeneratorService {
         // Add watermark
         const watermarked = await this._addDiagonalWatermark(jpgRes.data, 'LOGONEST.AI');
 
-        // Upload watermarked image onto bucket
-        const url = await this.s3.uploadImage(watermarked, 'watermarked/' + name + '.png');
+        // Compress image
+        const compressedBuffer = await this.sharp(watermarked)
+          .jpeg({ quality: 80 })
+          .toBuffer();
+
+        // Upload compressed watermarked image onto bucket
+        const url = await this.s3.uploadImage(compressedBuffer, 'watermarked/' + name + '.png');
 
         return url;
       } catch (error) {
@@ -222,7 +229,6 @@ export class ImageGeneratorService {
     }
 
     private async _addDiagonalWatermark(imageBuffer: Buffer, watermarkText: string): Promise<Buffer> {
-      const sharp = require('sharp');
       const width = 1024;
       const height = 1024;
 
@@ -252,7 +258,7 @@ export class ImageGeneratorService {
     
       const watermarkBuffer = canvas.toBuffer('image/png');
     
-      const result = await sharp(imageBuffer)
+      const result = await this.sharp(imageBuffer)
         .composite([{ input: watermarkBuffer, blend: 'over' }])
         .png()
         .toBuffer();
