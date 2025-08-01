@@ -10,4 +10,6 @@ export type GeneratedImg = {
   id: any;
   image_url: any;
   watermarked_url: string;
+  seed: number;
+  metadata: string;
 };

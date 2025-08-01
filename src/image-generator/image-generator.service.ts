@@ -428,11 +428,13 @@ export class ImageGeneratorService {
           if (!imageUrl) {
             throw new Error('Image URL not found in result');
           }
-
+          
           return {
             id: response?.data.id,
             image_url: imageUrl,
             watermarked_url: '',
+            seed: response?.data.seed,
+            metadata: response?.data
           };
         }
       

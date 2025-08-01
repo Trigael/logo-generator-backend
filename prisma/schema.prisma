@@ -205,6 +205,7 @@ model Prompted_logos {
   filepath_to_logo    String?
   watermark_filepath  String?
   bought              Boolean   @default(false)
+  seed                Int?
 
   //
   created_at    DateTime     @default(now())  
