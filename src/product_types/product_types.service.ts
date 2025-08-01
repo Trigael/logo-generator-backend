@@ -5,7 +5,7 @@ import { Product_types } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
 //
-const prompted_logo_name = 'generated_logo'
+const prompted_logo_name = 'temp_logo'
 
 @Injectable()
 export class ProductTypesService {

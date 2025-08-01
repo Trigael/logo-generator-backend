@@ -154,7 +154,7 @@ export class LogoService {
           prompt: { connect: { id_prompt: response.id_prompt}},
           id_from_model: response.data[i].id,
           url_to_logo: response.data[i].image_url,
-          filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('generated')),
+          filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('temp')),
           watermark_filepath: response.data[i].watermarked_url.substring(response.data[i].watermarked_url.indexOf('watermarked')) ,
         })
         response.data[i].id = logo.id_prompted_logo
@@ -206,8 +206,8 @@ export class LogoService {
             product_id: archived_logo.id_archived_logo
           })
 
-          // Move logo to 'Archived' folder
-          await this.moveLogotoArchived(body.logo_ids[i], archived_logo.id_archived_logo)
+          // Move logo to 'Generated' folder
+          await this.moveLogotoGenerated(body.logo_ids[i], archived_logo.id_archived_logo)
         }
         
         // Create order
@@ -223,20 +223,20 @@ export class LogoService {
         return payment
     }
 
-    async moveLogotoArchived(prompted_logo_id: number, archived_logo_id: number) {
+    async moveLogotoGenerated(prompted_logo_id: number, archived_logo_id: number) {
       // Move generated logos into archived logos file
       const logo_info = await this.getPromptedLogo(prompted_logo_id)
       
       if(logo_info?.filepath_to_logo) {
         const oldPath = `${logo_info.filepath_to_logo}`;
-        const newPath = `archived/${path.basename(logo_info.filepath_to_logo).replace('generated_', 'archived_')}`;
+        const newPath = `archived/${path.basename(logo_info.filepath_to_logo).replace('temp_', 'generated_')}`;
           
         // Move file with renaming
         await this.s3.moveObject(oldPath, newPath);
 
         // Update filepath of logo
         await this.updatePromptedLogo(prompted_logo_id, { filepath_to_logo: '' })
-        await this.updateArchivedLogo(archived_logo_id, { filepath: `/archived/${path.basename(logo_info.filepath_to_logo).replace('generated_', 'archived_')}` })
+        await this.updateArchivedLogo(archived_logo_id, { filepath: `/archived/${path.basename(logo_info.filepath_to_logo).replace('temp_', 'generated_')}` })
       }
     }
 

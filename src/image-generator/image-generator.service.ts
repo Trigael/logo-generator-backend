@@ -162,7 +162,7 @@ export class ImageGeneratorService {
         await Promise.all(
           generated_imgs.map(async (img, i) => {
             // rewriting original URL
-            img.image_url = await this._uploadImageFromUrl(img.image_url, `generated/generated_logo-${img.id}.jpg`); 
+            img.image_url = await this._uploadImageFromUrl(img.image_url, `temp/temp_logo-${img.id}.jpg`); 
           }),
         );
 
@@ -489,7 +489,7 @@ export class ImageGeneratorService {
       const base64Data = base64String.replace(/^data:image\/png;base64,/, '');
 
       // Path, where to save image
-      const savePath = path.join(__dirname, '..', '..', 'public', 'generated');
+      const savePath = path.join(__dirname, '..', '..', 'public', 'temp');
       if (!fs.existsSync(savePath)) {
         fs.mkdirSync(savePath, { recursive: true });
       }
