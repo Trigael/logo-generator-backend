@@ -323,16 +323,16 @@ export class PaymentsService {
                 // Delete attachment files
                 await fs.unlink(path.join(process.cwd(), zip));
                 await fs.unlink(path.join(process.cwd(), invoicePath));
-
-                // Delete watermarked images
-                for(let i = 0; i < logo_urls.watermarked_filepaths.length; i++) {
-                    await this.s3.deleteFile(logo_urls[i].watermarked_filepaths)
-                }
-            } catch {
-                this.logger.warn(`[PaymentsService._completePayment] Sending confirmation email for payment ${payment.id_payment} failed. Adding it into the queue.`, { metadata: { payment_id: payment.id_payment } })
+            } catch (err) {
+                this.logger.warn(`[PaymentsService._completePayment] Sending confirmation email for payment ${payment.id_payment} failed. Adding it into the queue. Error: ${err}`, { metadata: { payment_id: payment.id_payment } })
                 
                 // Failed to send email, adding it to queue
                 this.queue.addEmailToQueue(payment.id_payment)
+            }
+
+            // Delete watermarked images
+            for(let i = 0; i < logo_urls.watermarked_filepaths.length; i++) {
+                await this.s3.deleteFile(logo_urls[i].watermarked_filepaths)
             }
         }
 
