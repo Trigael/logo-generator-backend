@@ -37,6 +37,6 @@ async function productTypesSeed() {
     }
 
     await prisma.product_types.create({
-        data: { name: 'generated_logo' }
+        data: { name: 'temp_logo' }
     })
 }

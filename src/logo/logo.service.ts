@@ -205,7 +205,7 @@ export class LogoService {
             product_type_name: prompted_logo?.name ?? '',
             amount: 1,
             price: prompted_logo_price?.amount_cents ?? 0,
-            product_id: archived_logo.id_archived_logo
+            product_id: archived_logo.id_archived_logo,
           })
 
           // Move logo to 'Generated' folder

@@ -74,7 +74,7 @@ export class PaymentsService {
         const user = await this.usersService.getUser(order.user_id)
 
         if(!user) throw new InternalErrorException(`[PaymentService] User not found. Payment cancelled.`)
-        
+
         // Create payment in DB
         let db_response: any = await this.db.payments.create({ data: {
             order_id: order.id_order,
@@ -82,7 +82,7 @@ export class PaymentsService {
         } })
 
         let images = await this.ordersService.getOrdersLogoFilepaths(order.id_order, true)
-
+        
         // Creating products for stripe payment
         const products = {
             price_data: {
@@ -115,7 +115,7 @@ export class PaymentsService {
         }
 
         db_response.stripe = stripe_repsonse
-        db_response.images = images
+        db_response.images = images.watermarked_filepaths
 
         return db_response
     }

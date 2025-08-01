@@ -55,7 +55,7 @@ export class OrdersService {
         } })
 
         // Save every item into the order
-        this.saveItemsIntoOrder(order, order_items)
+        await this.saveItemsIntoOrder(order, order_items)
 
         return order
     }
@@ -98,16 +98,22 @@ export class OrdersService {
         const order_items = await this.db.order_items.findMany({ 
             where: { order_id: order_id }
         })
-        
+
         for(let i = 0; i < order_items.length; i++) {
-            const logo = await this.logoService.getArchivedLogo(order_items[i].archived_logo_id as number)
-            const prompted_logo = await this.logoService.getPromptedLogo(logo?.prompted_logo_id as number)
+            const archived_id = order_items[i].archived_logo_id
 
+            if(archived_id == null) continue
+
+            const logo = await this.logoService.getArchivedLogo(archived_id)
+            const prompted_logo_id = logo?.prompted_logo_id
+
+            if(prompted_logo_id == null) continue
+            const prompted_logo = await this.logoService.getPromptedLogo(prompted_logo_id)
+            
             if(logo?.filepath != null) filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/${this.BUCKET_NAME}${logo?.filepath}` : logo?.filepath)
-
-            if(prompted_logo?.watermark_filepath != null) watermarked_filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/${this.BUCKET_NAME}${prompted_logo.watermark_filepath}` : prompted_logo.watermark_filepath)
+            if(prompted_logo?.watermark_filepath != null) watermarked_filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/${this.BUCKET_NAME}/${prompted_logo.watermark_filepath}` : prompted_logo.watermark_filepath)
         }
-        
+
         return {
             filepaths, watermarked_filepaths
         }

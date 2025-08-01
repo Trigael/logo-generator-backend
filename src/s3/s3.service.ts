@@ -39,7 +39,6 @@ export class S3Service {
 
   async uploadImage(buffer: Buffer, key: string, contentType = 'image/png') {
     try {
-      console.log(this.bucket_name)
       const command = new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
