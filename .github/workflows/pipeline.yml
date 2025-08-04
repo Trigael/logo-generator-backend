@@ -150,6 +150,7 @@ jobs:
             
             SHORT_SHA_SAFE=$(echo $SHORT_SHA | cut -c1-12)
             export DB_URL_KEY="${{ github.ref == 'refs/heads/main' && secrets.DB_TRANSACTION_URL || secrets.DB_TRANSACTION_URL_STAGING }}"
+            export ENV_KEY="${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}"
             export REDIS_URL_KEY="${{ secrets.REDIS_URL }}"
             export GIT_COMMIT_HASH="${{ github.sha }}"
             export SHORT_SHA_SAFE=$(echo "${{ github.sha }}" | cut -c1-12)
@@ -159,7 +160,7 @@ jobs:
             docker pull ghcr.io/trigael/ai-logo-generator:$GIT_COMMIT_HASH
    
             echo "Generating stack file with GIT_COMMIT_HASH=$GIT_COMMIT_HASH"
-            envsubst '${REDIS_URL_KEY} ${DB_URL_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
+            envsubst '${REDIS_URL_KEY} ${DB_URL_KEY} ${ENV_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
 
             echo "Deploying docker stack..."
             docker stack deploy -c ~/docker-stack.generated.yaml --with-registry-auth ai-logo-generator

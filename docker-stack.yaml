@@ -52,7 +52,7 @@ services:
       - HETZNER_ACCESS_KEY_${SHORT_SHA_SAFE}
     environment:
       - PORT=4000
-      - NODE_ENV=production
+      - NODE_ENV=${ENV_KEY}
       - OPENAI_API_KEY=/run/secrets/OPENAI_API_KEY_${SHORT_SHA_SAFE}
       - FRONTEND_URL=/run/secrets/FRONTEND_URL_${SHORT_SHA_SAFE}
       - BACKEND_URL=/run/secrets/BACKEND_URL_${SHORT_SHA_SAFE}
