@@ -194,7 +194,7 @@ export class LogoService {
         let order_item: Order_item[] = []
         let prompted_logo = await this.productTypesService.getGeneratedLogoProductType()
         let prompted_logo_price = await this.pricesService.getPriceOfGeneratedLogo(body.currency ?? Currencies.EUR)
-
+        console.log(prompted_logo_price)
         // Format logo_ids into order_items
         for(let i = 0; i < body.logo_ids.length; i++) {
           const archived_logo = await this.getOrCreateArchivedLogo(body.logo_ids[i])

@@ -10,6 +10,7 @@ import { sanitizeLogData } from './sanitize-log.util';
 // Services
 import { RequestContextService } from 'src/common/request-context.service';
 import { getSecret } from 'src/utils/helpers.util';
+import { tryCatch } from 'bullmq';
 
 interface LogOptions {
   context?: string;
@@ -30,19 +31,23 @@ export class LoggerService {
   ) {}
 
   log(message: string, options: LogOptions = {}) {
-    const store = traceStorage.getStore();
+    try {
+      const store = traceStorage.getStore();
 
-    this.logger.log({
-      level: 'info',
-      message,
-      ...options,
-      traceId: this.requestContext.sessionId ?? store?.get('traceId'),
-      ip: options.ip ?? store?.get('ip'),
-      metadata: this.maybeSanitize(options.metadata),
-      dynamicMeta: (logEvent) => ({
-        session_id: this.requestContext.sessionId,
-      })
-    });
+      this.logger.log({
+        level: 'info',
+        message,
+        ...options,
+        traceId: this.requestContext.sessionId ?? store?.get('traceId'),
+        ip: options.ip ?? store?.get('ip'),
+        metadata: this.maybeSanitize(options.metadata),
+        dynamicMeta: (logEvent) => ({
+          session_id: this.requestContext.sessionId,
+        })
+      });
+    } catch (error) {
+      console.log(`[Logger] Logging failed. Error: ${error}`)
+    }
   }
 
   error(message: string, options: LogOptions = {}) {

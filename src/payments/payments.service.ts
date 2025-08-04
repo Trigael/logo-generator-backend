@@ -121,6 +121,7 @@ export class PaymentsService {
     }
 
     async verifyPayment(body: VerifyPaymentDto) {
+        console.log(`[PaymentService] Veryfing payment ${body.session_id}`)
         try {
           const session = await this.stripe.checkout.sessions.retrieve(body.session_id); 
           
@@ -128,7 +129,7 @@ export class PaymentsService {
             const payment = await this._completePayment(body.session_id)
             const order: Orders | null = payment ? await this.ordersService.getOrder(payment?.order_id) : null
 
-            if(!order) return { payment_state: 'PAID', ...payment }
+            if(!order) return { payment_state: 'VERIFIED', ...payment }
 
             // Logging payment intent
             this.logger.log(`Payment ${payment?.id_payment} was successfuly verified`, {
