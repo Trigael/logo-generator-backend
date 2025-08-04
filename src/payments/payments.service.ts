@@ -262,7 +262,7 @@ export class PaymentsService {
               line_items: products,
               customer_email: email,
               success_url: `${getSecret(process.env.FRONTEND_URL ?? '')}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
-              cancel_url: `${getSecret(process.env.FRONTEND_URL ?? '')}/payment-cancelled`,
+              cancel_url: `${getSecret(process.env.FRONTEND_URL ?? '')}/payment-cancelled?session_id={CHECKOUT_SESSION_ID}`,
               // metadata: { ... } // add order id etc. if needed
             });
 
