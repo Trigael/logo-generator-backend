@@ -153,7 +153,6 @@ export class LogoService {
         const logo: Prompted_logos = await this.createPromptedLogo({
           prompt: { connect: { id_prompt: response.id_prompt}},
           id_from_model: response.data[i].id,
-          url_to_logo: response.data[i].image_url,
           filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('temp')),
           watermark_filepath: response.data[i].watermarked_url.substring(response.data[i].watermarked_url.indexOf('watermarked')),
           seed: response.data[i].seed,

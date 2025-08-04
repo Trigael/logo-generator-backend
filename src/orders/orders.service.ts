@@ -6,6 +6,7 @@ import { DatabaseService } from 'src/database/database.service';
 import { LogoService } from 'src/logo/logo.service';
 import { PricesService } from 'src/prices/prices.service';
 import { ProductTypesService } from 'src/product_types/product_types.service';
+import { S3Service } from 'src/s3/s3.service';
 
 import { Order_item } from 'src/utils/types.util';
 
@@ -20,6 +21,7 @@ export class OrdersService {
         private readonly pricesService: PricesService,
         private readonly productTypesService: ProductTypesService,
         private readonly config: ConfigService,
+        private readonly s3: S3Service,
 
         @Inject(forwardRef(() => LogoService))
         private readonly logoService: LogoService,
@@ -92,7 +94,7 @@ export class OrdersService {
         }
     }
 
-    async getOrdersLogoFilepaths(order_id: number, as_url?: boolean) {
+    async getOrdersLogoFilepaths(order_id: number, as_url?: boolean, only_watermarked = true) {
         const filepaths: string[] = []
         const watermarked_filepaths: string[] = []
         const order_items = await this.db.order_items.findMany({ 
@@ -108,10 +110,11 @@ export class OrdersService {
             const prompted_logo_id = logo?.prompted_logo_id
 
             if(prompted_logo_id == null) continue
+            
             const prompted_logo = await this.logoService.getPromptedLogo(prompted_logo_id)
             
-            if(logo?.filepath != null) filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/${this.BUCKET_NAME}${logo?.filepath}` : logo?.filepath)
-            if(prompted_logo?.watermark_filepath != null) watermarked_filepaths.push(as_url ? `https://nbg1.your-objectstorage.com/${this.BUCKET_NAME}/${prompted_logo.watermark_filepath}` : prompted_logo.watermark_filepath)
+            if(!only_watermarked && logo?.filepath != null) filepaths.push(as_url ? await this.s3.getImage(logo?.filepath) : logo?.filepath)
+            if(prompted_logo?.watermark_filepath != null) watermarked_filepaths.push(as_url ? await this.s3.getImage(prompted_logo.watermark_filepath) : prompted_logo.watermark_filepath)
         }
 
         return {

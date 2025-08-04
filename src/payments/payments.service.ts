@@ -309,7 +309,7 @@ export class PaymentsService {
 
         if(product_types_included.generated_logo) {
             // Getting logos, zip and invoice
-            const logo_urls = await this.ordersService.getOrdersLogoFilepaths(payment.order_id, true)
+            const logo_urls = await this.ordersService.getOrdersLogoFilepaths(payment.order_id, true, false)
             const zip = await createZipFromUrls(logo_urls.filepaths, `generated_logos-${payment.id_payment}`)
             const invoicePath = await this.createStripeInvoice(stripe_id);
 

@@ -3,6 +3,8 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   CopyObjectCommand,
+  HeadObjectCommand,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
@@ -10,6 +12,10 @@ import { CONFIG_OPTIONS, ConfigService } from 'src/config/config.service';
 import { InternalErrorException } from 'src/utils/exceptios';
 
 import { getSecret } from 'src/utils/helpers.util';
+
+type content_types = {
+  'image/png'
+}
 
 @Injectable()
 export class S3Service {
@@ -37,21 +43,51 @@ export class S3Service {
     });
   }
 
-  async uploadImage(buffer: Buffer, key: string, contentType = 'image/png') {
+  async uploadImage(buffer: Buffer, key: string, contentType = 'image/png', is_public: boolean = false) {
     try {
-      const command = new PutObjectCommand({
+      const command: any = new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         Body: buffer,
         ContentType: contentType,
-        ACL: 'public-read',
       });
+
+      if(is_public) command.ACL = 'public-read'
 
       await this.s3.send(command);
 
-      return `${this.bucket_endpoint}/${this.bucket_name}/${key}`;
+      if(is_public) return `${this.bucket_endpoint}/${this.bucket_name}/${key}`;
+
+      return this.getImage(key)
     } catch (error) {
       throw new InternalErrorException(`[S3] Internal error occured: ${error}`)
+    }
+  }
+
+  async getImage(key: string, expiration = 600): Promise<string> {
+    try {
+      const cleanedKey = key.replace(/^\/+/, '');
+    
+      // If image is from folder watermarked/, return public URL
+      if (cleanedKey.startsWith('watermarked/')) {
+        return `${this.bucket_endpoint}/${this.bucket_name}/${cleanedKey}`;
+      }
+    
+      // Else return signed URL (works 10 mins)
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: cleanedKey,
+      });
+    
+      // Checking if object exits
+      await this.s3.send(command);
+    
+      const signedUrl = await getSignedUrl(this.s3, command, { expiresIn: expiration }); // default = 10 mins
+
+      return signedUrl;
+    } catch (error) {
+      console.error(`[S3] Error while getting image URL for key "${key}":`, error);
+      throw new InternalErrorException(`[S3] Cannot get image: ${error}`);
     }
   }
 

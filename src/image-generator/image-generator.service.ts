@@ -193,7 +193,7 @@ export class ImageGeneratorService {
           .toBuffer();
 
         // Upload compressed watermarked image onto bucket
-        const url = await this.s3.uploadImage(compressedBuffer, 'watermarked/' + name + '.png');
+        const url = await this.s3.uploadImage(compressedBuffer, 'watermarked/' + name + '.png', 'image/png', true);
 
         return url;
       } catch (error) {
