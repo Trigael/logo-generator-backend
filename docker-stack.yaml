@@ -1,14 +1,20 @@
 services:
   redis:
-      image: redis:7-alpine
-      volumes:
-        - redis-data:/data
-      command: ["redis-server", "--appendonly", "yes", "--bind", "0.0.0.0", "--requirepass", "9TjxsXa4B?4u", "--protected-mode", "yes"]
-      deploy:
-        restart_policy:
-          condition: on-failure
-      networks:
-        - app-net
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    command: [
+      "redis-server",
+      "--appendonly", "yes",
+      "--bind", "0.0.0.0",
+      "--requirepass", "9TjxsXa4BC4u",
+      "--protected-mode", "no"
+    ]
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - app-net
 
   web:
     image: ghcr.io/trigael/ai-logo-generator:${GIT_COMMIT_HASH}
@@ -22,7 +28,6 @@ services:
       - OPENAI_API_KEY_${SHORT_SHA_SAFE}
       - FRONTEND_URL_${SHORT_SHA_SAFE}
       - BACKEND_URL_${SHORT_SHA_SAFE}
-      - REDIS_URL_${SHORT_SHA_SAFE}
       # STRIPE
       - STRIPE_PUBLISHABLE_KEY_${SHORT_SHA_SAFE}
       - STRIPE_SECRET_KEY_${SHORT_SHA_SAFE}
@@ -51,7 +56,7 @@ services:
       - OPENAI_API_KEY=/run/secrets/OPENAI_API_KEY_${SHORT_SHA_SAFE}
       - FRONTEND_URL=/run/secrets/FRONTEND_URL_${SHORT_SHA_SAFE}
       - BACKEND_URL=/run/secrets/BACKEND_URL_${SHORT_SHA_SAFE}
-      - REDIS_URL=/run/secrets/REDIS_URL_${SHORT_SHA_SAFE}
+      - REDIS_URL=${REDIS_URL_KEY}
       # STRIPE
       - STRIPE_PUBLISHABLE_KEY=/run/secrets/STRIPE_PUBLISHABLE_KEY_${SHORT_SHA_SAFE}
       - STRIPE_SECRET_KEY=/run/secrets/STRIPE_SECRET_KEY_${SHORT_SHA_SAFE}
@@ -93,7 +98,7 @@ networks:
   caddy-shared-swarm:
     external: true
   app-net:
-    external: true
+    driver: overlay
 
 secrets:
   OPENAI_API_KEY_${SHORT_SHA_SAFE}:
@@ -101,8 +106,6 @@ secrets:
   FRONTEND_URL_${SHORT_SHA_SAFE}:
     external: true
   BACKEND_URL_${SHORT_SHA_SAFE}:
-    external: true
-  REDIS_URL_${SHORT_SHA_SAFE}:
     external: true
   # STRIPE
   STRIPE_PUBLISHABLE_KEY_${SHORT_SHA_SAFE}:

@@ -93,7 +93,6 @@ jobs:
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.OPENAI_API_KEY || secrets.OPENAI_API_KEY_STAGING }}" | docker secret create OPENAI_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.FRONTEND_URL || secrets.FRONTEND_URL_STAGING }}" | docker secret create FRONTEND_URL_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.BACKEND_URL || secrets.BACKEND_URL_STAGING }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
-            echo -n "${{ secrets.REDIS_URL }}" | docker secret create REDIS_URL_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.STRIPE_PUBLISHABLE_KEY || secrets.STRIPE_PUBLISHABLE_KEY_STAGING }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.STRIPE_SECRET_KEY || secrets.STRIPE_SECRET_KEY_STAGING }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.MAILJET_API_KEY || secrets.MAILJET_API_KEY_STAGING }}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE -
@@ -150,14 +149,17 @@ jobs:
             echo "TAG = $github.sha"
             
             SHORT_SHA_SAFE=$(echo $SHORT_SHA | cut -c1-12)
-            export DB_URL_KEY="${{ secrets.DB_TRANSACTION_URL }}"
+            export DB_URL_KEY="${{ github.ref == 'refs/heads/main' && secrets.DB_TRANSACTION_URL || secrets.DB_TRANSACTION_URL_STAGING }}"
+            export REDIS_URL_KEY="${{ secrets.REDIS_URL }}"
             export GIT_COMMIT_HASH="${{ github.sha }}"
             export SHORT_SHA_SAFE=$(echo "${{ github.sha }}" | cut -c1-12)
+
+            echo ${{ secrets.REDIS_URL }}
 
             docker pull ghcr.io/trigael/ai-logo-generator:$GIT_COMMIT_HASH
    
             echo "Generating stack file with GIT_COMMIT_HASH=$GIT_COMMIT_HASH"
-            envsubst '${DB_URL_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
+            envsubst '${REDIS_URL_KEY} ${DB_URL_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE}' < ~/docker-stack.yaml > ~/docker-stack.generated.yaml
 
             echo "Deploying docker stack..."
             docker stack deploy -c ~/docker-stack.generated.yaml --with-registry-auth ai-logo-generator
