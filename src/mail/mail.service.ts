@@ -75,10 +75,12 @@ export class MailService {
 
             // Save Mailjet ID into database
             if(email_id) await this.updateEmailReport(email_id, { mailjet_id: response.body.Messages[0].MessageUUID })
+
+            console.log(`[EmailService] Email sent to ${to}. Mailjet Response: ${response}`)
             
             return response.body;
         } catch (error) {
-            if (error.response) console.error('Mailjet error response:', error.response.body);
+            if (error.response) console.error('[EmailService] Mailjet error response:', error.response.body);
 
             console.error(`[MailService] Error: ${error}`);
         }
