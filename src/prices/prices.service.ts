@@ -16,8 +16,6 @@ export class PricesService {
     async getPriceOfGeneratedLogo(currency: Currencies): Promise<Prices | null> {
         const product_type: Product_types | null = await this.productTypesService.getGeneratedLogoProductType()
 
-        console.log(`sesssion_id: ${this.requestContext.sessionId}`)
-
         if(!product_type) return null
 
         const price = await this.db.prices.findFirst({
