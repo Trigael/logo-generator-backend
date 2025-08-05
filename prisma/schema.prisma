@@ -332,6 +332,7 @@ model Mails {
   template_id   Int
   variables     Json
   state         Email_states    @default(SENT)
+  attachment    String[]
 
   //
   created_at    DateTime     @default(now())  
