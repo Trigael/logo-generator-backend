@@ -221,7 +221,11 @@ export class LogoService {
           order, order_item
         )
 
-        return payment
+        return {
+          ...payment,
+          price: order.total_amount_cents / 100,
+          currency: order.currency,
+        }
     }
 
     async moveLogotoGenerated(prompted_logo_id: number, archived_logo_id: number) {
