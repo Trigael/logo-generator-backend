@@ -333,7 +333,7 @@ export class PaymentsService {
 
             // Delete watermarked images
             for(let i = 0; i < logo_urls.watermarked_filepaths.length; i++) {
-                await this.s3.deleteFile(logo_urls[i].watermarked_filepaths)
+                if(logo_urls.watermarked_filepaths[0].length > 0) await this.s3.deleteFile(logo_urls[i].watermarked_filepaths)
             }
         }
 
