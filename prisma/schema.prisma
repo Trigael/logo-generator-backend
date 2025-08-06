@@ -30,6 +30,7 @@ enum Payment_states {
   UNPAID
   COMPLETED
   FAILED
+  REFUNDED
 }
 
 enum Transformation_types {
@@ -47,6 +48,7 @@ enum Order_states {
   CREATED
   FAILED
   COMPLETED
+  REFUNDED
 }
 
 enum Logo_resolutions {

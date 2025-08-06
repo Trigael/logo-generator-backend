@@ -33,6 +33,7 @@ import { ConfigModule } from './config/config.module';
 import { S3Module } from './s3/s3.module';
 import { ImageFormatterModule } from './image-formatter/image-formatter.module';
 import { TransformedLogoModule } from './transformed-logo/transformed-logo.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { TransformedLogoModule } from './transformed-logo/transformed-logo.modul
     S3Module,
     ImageFormatterModule,
     TransformedLogoModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService],

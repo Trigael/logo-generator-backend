@@ -157,29 +157,6 @@ export class PaymentsService {
         }
     }
 
-    async webhookForStripe(body: any, req: any) {
-        const sig = req.headers['stripe-signature'];
-        const event = this.stripe.webhooks.constructEvent(
-          body, sig, getSecret(process.env.STRIPE_WEBHOOK_SECRET ?? '')
-        );
-    
-        if (event.type === 'checkout.session.completed') {
-            const session = event.data.object;
-            const payment = await this.getPaymentByStripeID(session.id)
-
-            this.logger.log(
-                `Payment ${payment?.id_payment} was successfuly paid for`, {
-                metadata: {
-                    payment_id: payment?.id_payment
-                }
-            })
-          
-            await this._completePayment(session.id)
-        }
-        
-        return true
-    }
-
     async createStripeInvoice(session_id: string): Promise<string> {
       const session = await this.stripe.checkout.sessions.retrieve(session_id);
 
@@ -264,7 +241,9 @@ export class PaymentsService {
               customer_email: email,
               success_url: `${getSecret(process.env.FRONTEND_URL ?? '')}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
               cancel_url: `${getSecret(process.env.FRONTEND_URL ?? '')}/payment-cancelled?session_id={CHECKOUT_SESSION_ID}`,
-              // metadata: { ... } // add order id etc. if needed
+              metadata: { 
+                payment_id: payment_id
+              } 
             });
 
             // Logging payment intent
@@ -328,7 +307,7 @@ export class PaymentsService {
                 this.logger.warn(`[PaymentsService._completePayment] Sending confirmation email for payment ${payment.id_payment} failed. Adding it into the queue. Error: ${err}`, { metadata: { payment_id: payment.id_payment } })
                 
                 // Failed to send email, adding it to queue
-                this.queue.addEmailToQueue(payment.id_payment)
+                this.queue.addEmailToQueue(payment.id_payment, [zip, invoicePath])
             }
 
             // Delete watermarked images

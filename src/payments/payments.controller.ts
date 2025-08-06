@@ -6,10 +6,6 @@ import { ApiParam } from '@nestjs/swagger';
 @Controller('payments')
 export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) {}
-    @Post('stripe')
-    webhookForStripe(@Body() body, @Req() req) {
-        return this.paymentsService.webhookForStripe(body, req)
-    }
     
     @Get('verify/:id')
     @ApiParam({ name: "payment_id", required: true, type: Number, description: "Id of payments that you want to verify"})

@@ -95,6 +95,7 @@ jobs:
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.BACKEND_URL || secrets.BACKEND_URL_STAGING }}" | docker secret create BACKEND_URL_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.STRIPE_PUBLISHABLE_KEY || secrets.STRIPE_PUBLISHABLE_KEY_STAGING }}" | docker secret create STRIPE_PUBLISHABLE_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.STRIPE_SECRET_KEY || secrets.STRIPE_SECRET_KEY_STAGING }}" | docker secret create STRIPE_SECRET_KEY_$SHORT_SHA_SAFE -
+              echo -n "${{ secrets.STRIPE_WEBHOOK_KEY }}" | docker secret create STRIPE_WEBHOOK_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.MAILJET_API_KEY || secrets.MAILJET_API_KEY_STAGING }}" | docker secret create MAILJET_API_KEY_$SHORT_SHA_SAFE -
             echo -n "${{ github.ref == 'refs/heads/main' && secrets.MAILJET_API_SECRET || secrets.MAILJET_API_SECRET_STAGING }}" | docker secret create MAILJET_API_SECRET_$SHORT_SHA_SAFE -
             echo -n "${{ secrets.MAILJET_FROM_EMAIL }}" | docker secret create MAILJET_FROM_EMAIL_$SHORT_SHA_SAFE -
