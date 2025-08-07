@@ -84,7 +84,7 @@ export class PaymentsService {
         let images = await this.ordersService.getOrdersLogoFilepaths(order.id_order, true)
         
         // Creating products for stripe payment
-        const products = [{
+        const products = {
             price_data: {
                 currency: order.currency.toLocaleLowerCase(),
                 product_data: {
@@ -98,7 +98,7 @@ export class PaymentsService {
                 unit_amount: order_items[0].price, // Needs to be in cents
             },
             quantity: order_items.length,
-        }]
+        }
 
         // Create payment in Stripe
         const stripe_repsonse = await this._createStripeTransaction(
