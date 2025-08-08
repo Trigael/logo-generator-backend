@@ -18,7 +18,6 @@ import { getSecret } from 'src/utils/helpers.util';
 import { InternalErrorException } from 'src/utils/exceptios';
 import { ConfigService, CONFIG_OPTIONS } from 'src/config/config.service';
 import { S3Service } from 'src/s3/s3.service';
-import { tryCatch } from 'bullmq';
 import { GeneratedImg } from 'src/utils/types.util';
 
 
@@ -57,10 +56,8 @@ export class ImageGeneratorService {
             ai_model: ai_model,
             brand_name: body.brand_name,
             slogan: body.slogan,
-            industry: body.industry,
             brand_colors: body.brand_colors,
             logo_styles: body.logo_style,
-            similiar_styles: body.similiar_style,
             additional_details: body.additional_details,
             things_to_exclude: body.things_to_exclude,
             logo_resolution: body.logo_resolution,
@@ -95,10 +92,8 @@ export class ImageGeneratorService {
             ai_model: 'ChatGPT_to_Flux',
             brand_name: body.brand_name,
             slogan: body.slogan,
-            industry: body.industry,
             brand_colors: body.brand_colors,
             logo_styles: body.logo_style,
-            similiar_styles: body.similiar_style,
             additional_details: body.additional_details,
             things_to_exclude: body.things_to_exclude,
             logo_resolution: body.logo_resolution,
@@ -308,7 +303,7 @@ export class ImageGeneratorService {
         const results: string[] = [];
 
         try {
-          const response = await firstValueFrom(
+          await firstValueFrom(
               this.httpService.post(
                 "https://router.huggingface.co/nebius/v1/images/generations",
                 { inputs: 'ping' },

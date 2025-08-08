@@ -1,17 +1,9 @@
 import { Logo_resolutions } from '@prisma/client';
-import { Transform } from 'class-transformer';
 import {
-  IsEmail,
   IsEnum,
-  IsISO8601,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
-  Matches,
-  ValidateIf,
-  Max,
-  Min
 } from 'class-validator';
 
 export class GenerateLogoDto {
@@ -22,20 +14,12 @@ export class GenerateLogoDto {
     @IsString()
     @IsOptional()
     slogan: string;
-
-    @IsString()
-    @IsOptional()
-    industry: string;
     
     @IsOptional()
     brand_colors: string[];
 
     @IsOptional()
     logo_style: string[];
-
-    @IsOptional()
-    @IsString()
-    similiar_style: string;
 
     @IsOptional()
     @IsString()
