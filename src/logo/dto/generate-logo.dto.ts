@@ -16,10 +16,10 @@ export class GenerateLogoDto {
     slogan: string;
     
     @IsOptional()
-    brand_colors: string[];
+    brand_colors: string;
 
     @IsOptional()
-    logo_style: string[];
+    logo_style: string;
 
     @IsOptional()
     @IsString()

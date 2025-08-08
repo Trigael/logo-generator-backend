@@ -173,10 +173,8 @@ model Prompts {
   ai_model            String              @default("dall-e-3")
   brand_name          String
   slogan              String?
-  industry            String?
-  brand_colors        String[]
-  logo_styles         String[]
-  similiar_styles     String?
+  brand_colors        String
+  logo_styles         String
   additional_details  String?
   things_to_exclude   String?
   amount_to_generate  Int                 @default(1)
