@@ -10,7 +10,7 @@ export enum CONFIG_OPTIONS {
 @Injectable()
 export class ConfigService {
     private readonly PROMPTED_LOGO_FILEPATH = 'public/generated'
-    private readonly CHATGPT_MODEL = 'gpt-4o'
+    private readonly CHATGPT_MODEL = 'gpt-5' // 'gpt-4o'
     private readonly AMOUNT_OF_PICS_TO_GENERATE = 2
     private readonly BUCKET_NAME = 'logonest-ai'
     private readonly BUCKET_NAME_STAGING = 'logonest-ai-staging'
