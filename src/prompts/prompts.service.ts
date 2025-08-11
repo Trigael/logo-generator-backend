@@ -53,6 +53,7 @@ export class PromptsService {
                         Respond ONLY with a JSON array of ${amount} prompt strings. Each prompt must be ≤ 220 characters and fully self-contained.`
             case 4: // Flux.1 [dev] 3 | last update: 11.08.25
                 return `
+<<<<<<< HEAD
                 -- Details before generation: must include company name, ${body.additional_details};
                 -- Negatives: Symbols, Text, ${body.things_to_exclude} 
                 ;Company Logo on a transparent background
@@ -60,6 +61,14 @@ export class PromptsService {
                 ,print logotype
                 ,company name '${body.brand_name}' (must be included)
                 ${body.slogan ? `,slogan: '${body.slogan}'`: ''}
+=======
+                -- Details before generation: No other text than company ${body.slogan ? 'and slogan' : ''} (company must be included) + ${body.additional_details} 
+                ;Logo on a transparent background, 
+                ;Rasterized, ${body.logo_style} vector logo with ${body.brand_colors} colors, 
+                ;print logotyp, 
+                ;company ${body.brand_name}, 
+                ${body.slogan ? `;slogan ${body.slogan}`: ''}
+>>>>>>> staging
                 `
             case 5: // Flux.1 [dev] 3 (direct prompt) | last update: 11.08.25
                 return `
