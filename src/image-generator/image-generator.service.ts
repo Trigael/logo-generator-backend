@@ -87,40 +87,44 @@ export class ImageGeneratorService {
         return response.data;
     }
 
-    async generateLogoWithFlux(body: GenerateLogoDto, amount: number) {
+    async generateLogoWithFlux(body: GenerateLogoDto, amount: number = 1) {
+      const img_prompts: string[] = []
       const prompt: Prompts = await this.promptsService.createPrompt({
-            ai_model: 'Flux',
-            brand_name: body.brand_name,
-            slogan: body.slogan,
-            brand_colors: body.brand_colors,
-            logo_styles: body.logo_style,
-            additional_details: body.additional_details,
-            things_to_exclude: body.things_to_exclude,
-            logo_resolution: body.logo_resolution,
-            amount_to_generate: amount,
-            whole_prompt: this.promptsService.createWholePrompt(body, amount, 4)
-        })
+          ai_model: 'Flux',
+          brand_name: body.brand_name,
+          slogan: body.slogan,
+          brand_colors: body.brand_colors,
+          logo_styles: body.logo_style,
+          additional_details: body.additional_details,
+          things_to_exclude: body.things_to_exclude,
+          logo_resolution: body.logo_resolution,
+          amount_to_generate: amount,
+          whole_prompt: this.promptsService.createWholePrompt(body, amount, 4)
+      })
 
-        // Generating images through Flux
-        let generated_imgs: GeneratedImg[] = await this._generateThroughFlux1([prompt.whole_prompt])
+      // Adding prompts for number of images we need
+      for(let i = 0; i < amount; i++) img_prompts.push(prompt.whole_prompt)
 
-        // Save images locally
-        await Promise.all(
-          generated_imgs.map(async (img, i) => {
-            // rewriting original URL
-            img.image_url = await this._uploadImageFromUrl(img.image_url, `temp/temp_logo-${img.id}.jpg`); 
-          }),
-        );
+      // Generating images through Flux
+      let generated_imgs: GeneratedImg[] = await this._generateThroughFlux1(img_prompts)
 
-        // Create watermarked versions
-        for(let i = 0; i < generated_imgs.length; i++) {
-          generated_imgs[i].watermarked_url = await this.watermarkImage(generated_imgs[i].image_url, generated_imgs[i].id + `_` + Date.now())
-        }
+      // Save images locally
+      await Promise.all(
+        generated_imgs.map(async (img, i) => {
+          // rewriting original URL
+          img.image_url = await this._uploadImageFromUrl(img.image_url, `temp/temp_logo-${img.id}.jpg`); 
+        }),
+      );
 
-        return {
-          id_prompt: prompt.id_prompt,
-          data: generated_imgs
-        }
+      // Create watermarked versions
+      for(let i = 0; i < generated_imgs.length; i++) {
+        generated_imgs[i].watermarked_url = await this.watermarkImage(generated_imgs[i].image_url, generated_imgs[i].id + `_` + Date.now())
+      }
+
+      return {
+        id_prompt: prompt.id_prompt,
+        data: generated_imgs
+      }
     }
 
     async generateLogoWitchChatGPTPrompts(body: GenerateLogoDto, amount: number) {
@@ -422,8 +426,9 @@ export class ImageGeneratorService {
             height: 1024,
             width: 1024,
             prompt_upsampling: false,
-            steps: 50,
-            guidance: 3
+            steps: 36, // 1 <= x <= 50
+            guidance: 4, // 1.5 <= x <= 5
+            output_format: 'png',
           },
           {
             headers: {
