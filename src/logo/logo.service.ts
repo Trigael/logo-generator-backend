@@ -139,7 +139,7 @@ export class LogoService {
 
     async generateLogoWithPromptRefactoring(body: GenerateLogoDto, session_id?: string) {
       const amount = await this.config.get(CONFIG_OPTIONS.AMOUNT_OF_PICS_TO_GENERATE) as number
-      const response = await this.imageGenerator.generateLogoWitchChatGPTPrompts(
+      const response = await this.imageGenerator.generateLogoWithFlux(
         body, 
         amount
       )
