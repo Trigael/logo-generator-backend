@@ -3,6 +3,7 @@ import axios from 'axios';
 
 // Services
 import { S3Service } from 'src/s3/s3.service';
+import { InternalErrorException } from 'src/utils/exceptios';
 
 @Injectable()
 export class ImageFormatterService {
@@ -57,13 +58,17 @@ export class ImageFormatterService {
     * @param height max height
     * @returns URL to the resized image on the bucket
     */
-    async resizeImage(img_url: string, name: string, width: number, height: number) {
+    async resizeToSmallerImage(img_url: string, name: string, width: number, height: number): Promise<string> {
       // Download the image
       const response = await axios.get(img_url, { responseType: 'arraybuffer' });
       const originalBuffer = Buffer.from(response.data);
+      const metadata = await this.sharp(originalBuffer).metadata();
+
+      // If width or height return false
+      if(metadata.height > height || metadata.width > width) 
+        throw new InternalErrorException(`You can't use this function to resize the image to higher resolution than the origanals picture`)
 
       // What format the image is
-      const metadata = await this.sharp(originalBuffer).metadata();
       const format = metadata.format ?? 'png'; 
 
       // Resizing the picture
