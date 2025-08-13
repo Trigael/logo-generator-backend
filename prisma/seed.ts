@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Currencies, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -38,5 +38,13 @@ async function productTypesSeed() {
 
     await prisma.product_types.create({
         data: { name: 'temp_logo' }
+    })
+
+    await prisma.prices.create({
+        data: { 
+          amount_cents: 100,
+          currency: Currencies.EUR,
+          product_type: { connect: { id_product_type: 1}}
+         }
     })
 }
