@@ -19,6 +19,8 @@ import { InternalErrorException } from 'src/utils/exceptios';
 import { ConfigService, CONFIG_OPTIONS } from 'src/config/config.service';
 import { S3Service } from 'src/s3/s3.service';
 import { GeneratedImg } from 'src/utils/types.util';
+import { TextCleanerService } from 'src/text-cleaner/text-cleaner.service';
+import { ImageFormatterService } from 'src/image-formatter/image-formatter.service';
 
 
 @Injectable()
@@ -40,6 +42,8 @@ export class ImageGeneratorService {
         private readonly httpService: HttpService,
         private readonly promptsService: PromptsService,
         private readonly s3: S3Service,
+        private readonly textCleaner: TextCleanerService,
+        private readonly imageFormatter: ImageFormatterService,
 
         @Inject(forwardRef(() => ConfigService))
         private readonly config: ConfigService,
@@ -110,9 +114,18 @@ export class ImageGeneratorService {
 
       // Save images locally
       await Promise.all(
-        generated_imgs.map(async (img, i) => {
-          // rewriting original URL
-          img.image_url = await this._uploadImageFromUrl(img.image_url, `temp/temp_logo-${img.id}.jpg`); 
+        generated_imgs.map(async (img) => {
+          // Download as Buffer
+          const res = await firstValueFrom(this.httpService.get(img.image_url, { responseType: 'arraybuffer' }));
+          const original = Buffer.from(res.data);
+
+          // Clean artifacts
+          const cleaned = await this.textCleaner.clean(original, body.brand_name, body.slogan);
+        
+          // Create transparent PNG
+          const png_buffer = await this.imageFormatter.formatIntoTransparentPng(cleaned);
+          
+          img.image_url = await this.s3.uploadImage(png_buffer, `temp/temp_logo-${img.id}.png`, 'image/png', true);
         }),
       );
 

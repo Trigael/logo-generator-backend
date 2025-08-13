@@ -15,39 +15,50 @@ export class ImageFormatterService {
 
     /**
      * Used to format images into PNG with transparent background
-     * @param img_url URL to the image, you want to be formatted
-     * @param name new name for the picture
-     * @returns URL to new image as PNG with transparent background
+     * @param image_buffer 
+     * @param name 
+     * @returns 
      */
-    async formatIntoTransparentPng(img_url: string, name: string) {
-        // Download image
-        const response = await axios.get(img_url, { responseType: 'arraybuffer' });
-        const originalBuffer = Buffer.from(response.data);
+    async formatIntoTransparentPng(image_buffer: Buffer, name?: string) {
+      const base = this.sharp(image_buffer, { failOn: 'none' }).rotate();
+      const meta = await base.metadata();
+      const W = meta.width ?? 0;
+      const H = meta.height ?? 0;
 
-        // Background detection and mask creation
-        const pngBuffer = await this.sharp(originalBuffer)
-          .removeAlpha() 
-          .flatten({ background: '#ffffff' }) 
-          .toColourspace('b-w') 
-          .threshold(240) 
-          .toBuffer();
-
-        const alpha = await this.sharp(pngBuffer)
-          .toColourspace('b-w')
-          .negate()
-          .toBuffer();
-
-        const transparentPng = await this.sharp(originalBuffer)
-          .ensureAlpha()
-          .joinChannel(alpha) 
-          .png()
-          .toBuffer();
-
-        // Upload onto bucket
+      if (!W || !H) throw new Error('Unsupported or empty image buffer');
+    
+      const whiteThreshold = 235; // 0..255
+      const feather = 0.8;
+    
+      // Creating 1-channel mask
+      const mask = await base
+        .clone()
+        .removeAlpha()
+        .greyscale()
+        .blur(feather)
+        .linear(1, -whiteThreshold)
+        .normalize()     
+        .negate()
+        .toColourspace('b-w')
+        .png()         
+        .toBuffer();
+    
+      // Application of mask as alpha
+      const out = await base
+        .clone()
+        .removeAlpha()
+        .ensureAlpha()
+        .composite([{ input: mask, blend: 'dest-in' }])
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+    
+      if (name) {
         const key = `transparent/${name}.png`;
-        const url = await this.s3.uploadImage(transparentPng, key, 'image/png');
+        
+        return await this.s3.uploadImage(out, key, 'image/png', true);
+      }
 
-        return url;
+      return out;
     }
 
     /**

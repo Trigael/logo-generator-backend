@@ -5,13 +5,16 @@ import { HttpModule } from '@nestjs/axios';
 import { PromptsModule } from 'src/prompts/prompts.module';
 import { ConfigModule } from 'src/config/config.module';
 import { S3Module } from 'src/s3/s3.module';
+import { TextCleanerModule } from 'src/text-cleaner/text-cleaner.module';
+import { ImageFormatterModule } from 'src/image-formatter/image-formatter.module';
 
 @Module({
   imports: [
     HttpModule, 
     PromptsModule,
     S3Module,
-
+    TextCleanerModule,
+    ImageFormatterModule,
     forwardRef(() => ConfigModule), 
   ],
   providers: [ImageGeneratorService],

@@ -52,6 +52,7 @@
     "rxjs": "^7.8.1",
     "sharp": "^0.34.3",
     "stripe": "^18.2.0",
+    "tesseract.js": "^4.1.1",
     "ua-parser-js": "^2.0.3",
     "winston": "^3.17.0",
     "winston-loki": "^6.1.3",

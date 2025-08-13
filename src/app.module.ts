@@ -34,6 +34,7 @@ import { S3Module } from './s3/s3.module';
 import { ImageFormatterModule } from './image-formatter/image-formatter.module';
 import { TransformedLogoModule } from './transformed-logo/transformed-logo.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { TextCleanerModule } from './text-cleaner/text-cleaner.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     ImageFormatterModule,
     TransformedLogoModule,
     WebhooksModule,
+    TextCleanerModule,
   ],
   controllers: [AppController],
   providers: [AppService, RequestContextService],
