@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Users } from '@prisma/client';
+import { users } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class UsersService {
         private readonly db: DatabaseService,
     ) {}
 
-    async getUser(user_id?: number, email?: string): Promise<Users | null> {
+    async getUser(user_id?: number, email?: string): Promise<users | null> {
         if(user_id) return await this.db.users.findUnique({ where: {id_user: user_id}})
 
         // Email    

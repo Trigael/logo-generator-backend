@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { HttpService } from '@nestjs/axios';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { Prompts } from '@prisma/client';
+import { prompts } from '@prisma/client';
 import { firstValueFrom } from 'rxjs';
 import { access, mkdir } from 'fs/promises';
 import { join } from 'path';
@@ -56,7 +56,7 @@ export class ImageGeneratorService {
     
     async generateLogo(body: GenerateLogoDto, amount: number) {
         const ai_model = "dall-e-3"
-        const prompt: Prompts = await this.promptsService.createPrompt({
+        const prompt: prompts = await this.promptsService.createPrompt({
             ai_model: ai_model,
             brand_name: body.brand_name,
             slogan: body.slogan,
@@ -93,7 +93,7 @@ export class ImageGeneratorService {
 
     async generateLogoWithFlux(body: GenerateLogoDto, amount: number = 1) {
       const img_prompts: string[] = []
-      const prompt: Prompts = await this.promptsService.createPrompt({
+      const prompt: prompts = await this.promptsService.createPrompt({
           ai_model: 'Flux',
           brand_name: body.brand_name,
           slogan: body.slogan,
@@ -141,7 +141,7 @@ export class ImageGeneratorService {
     }
 
     async generateLogoWitchChatGPTPrompts(body: GenerateLogoDto, amount: number) {
-      const prompt: Prompts = await this.promptsService.createPrompt({
+      const prompt: prompts = await this.promptsService.createPrompt({
             ai_model: 'ChatGPT_to_Flux',
             brand_name: body.brand_name,
             slogan: body.slogan,

@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { Sessions } from '@prisma/client';
+import { sessions } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
 // Services
@@ -17,7 +17,7 @@ export class SessionMiddleware implements NestMiddleware {
 
   async use(req: Request, res: Response, next: NextFunction) {
     let sessionId = getSecret(process.env.NODE_ENV ?? '') == 'production' ? req.cookies?.session_id : 'dev_session'
-    let session: Sessions | null = null;
+    let session: sessions | null = null;
     
     if (sessionId) {
       session = await this.sessionService.getSession(sessionId);

@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { Currencies, Orders, Prisma } from '@prisma/client';
+import { currencies, orders, Prisma } from '@prisma/client';
 import { CONFIG_OPTIONS, ConfigService } from 'src/config/config.service';
 
 import { DatabaseService } from 'src/database/database.service';
@@ -33,9 +33,9 @@ export class OrdersService {
 
     async createOrder(
         user_id: number,
-        currency: Currencies,
+        currency: currencies,
         order_items: Order_item[]
-    ): Promise<Orders> {
+    ): Promise<orders> {
         let total_price = 0
 
         // Calculating total price for each item
@@ -62,20 +62,20 @@ export class OrdersService {
         return order
     }
 
-    async getOrder(order_id: number): Promise<Orders | null> {
+    async getOrder(order_id: number): Promise<orders | null> {
         return await this.db.orders.findFirst({
             where: { id_order: order_id }
         })
     }
 
-    async updateOrder(order_id: number, data: Prisma.OrdersUpdateInput): Promise<Orders> {
+    async updateOrder(order_id: number, data: Prisma.ordersUpdateInput): Promise<orders> {
         return await this.db.orders.update({
             where: { id_order: order_id },
             data
         })
     }
 
-    async saveItemsIntoOrder(order: Orders, order_items: Order_item[]) {
+    async saveItemsIntoOrder(order: orders, order_items: Order_item[]) {
         const generated_logo_type = await this.productTypesService.getGeneratedLogoProductType()
 
         for(let i = 0; i < order_items.length; i++) {

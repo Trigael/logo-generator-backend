@@ -9,7 +9,7 @@ export class PromptsService {
         private readonly db: DatabaseService,
     ) {}
 
-    async createPrompt(data: Prisma.PromptsCreateInput) {
+    async createPrompt(data: Prisma.promptsCreateInput) {
         return await this.db.prompts.create({ data })
     }
 
@@ -83,7 +83,7 @@ export class PromptsService {
         }
     }
 
-    async updatePrompt(id_prompt: number, data: Prisma.PromptsUpdateInput) {
+    async updatePrompt(id_prompt: number, data: Prisma.promptsUpdateInput) {
         return await this.db.prompts.update({
             where: { id_prompt },
             data

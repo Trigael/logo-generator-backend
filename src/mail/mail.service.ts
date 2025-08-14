@@ -35,11 +35,11 @@ export class MailService {
       );
     }
 
-    async saveEmailReport(email_data: Prisma.MailsCreateInput) {
+    async saveEmailReport(email_data: Prisma.mailsCreateInput) {
       return this.db.mails.create({ data: email_data })
     }
 
-    async updateEmailReport(email_id: number, email_data: Prisma.MailsUpdateInput) {
+    async updateEmailReport(email_id: number, email_data: Prisma.mailsUpdateInput) {
       return this.db.mails.update({
         where: { id_mails: email_id },
         data: email_data

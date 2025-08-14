@@ -1,4 +1,4 @@
-import { Logo_resolutions } from '@prisma/client';
+import { logo_resolutions } from '@prisma/client';
 import {
   IsEnum,
   IsNotEmpty,
@@ -30,6 +30,6 @@ export class GenerateLogoDto {
     additional_details: string;
 
     @IsOptional()
-    @IsEnum(Logo_resolutions)
-    logo_resolution: Logo_resolutions;
+    @IsEnum(logo_resolutions)
+    logo_resolution: logo_resolutions;
 }

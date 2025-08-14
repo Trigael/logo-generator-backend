@@ -1,4 +1,4 @@
-import { Currencies } from '@prisma/client';
+import { currencies } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
@@ -9,17 +9,17 @@ import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class BuyLogoDto {
-  @IsEnum(Currencies)
+  @IsEnum(currencies)
   @IsOptional()
-  @Transform(({ value }) => value ?? Currencies.EUR)
+  @Transform(({ value }) => value ?? currencies.EUR)
   @ApiProperty({
-    example: Currencies.EUR,
+    example: currencies.EUR,
     description: "Specifies what currency will be used in payment",
-    enum: Currencies,
+    enum: currencies,
     required: false,
-    default: Currencies.EUR
+    default: currencies.EUR
   })
-  currency?:  Currencies
+  currency?:  currencies
 
   @IsEmail()
   @IsNotEmpty()

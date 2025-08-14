@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { mkdirSync, existsSync } from 'fs';
-import { Order_items, Order_states, Orders, Payment_states, Payments, Prisma } from '@prisma/client';
+import { order_items, order_states, orders, payment_states, payments, Prisma } from '@prisma/client';
 
 // DTOs
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
@@ -50,18 +50,18 @@ export class PaymentsService {
         return await this.db.payments.findUnique({ where: {id_payment: payment_id }})
     }
 
-    async getPaymentByStripeID(stripe_id: string): Promise<Payments | null> {
+    async getPaymentByStripeID(stripe_id: string): Promise<payments | null> {
         return await this.db.payments.findFirst({ where: { stripe_id: stripe_id }})
     }
 
-    async updatePayment(payment_id: number, data: Prisma.PaymentsUpdateInput): Promise<Payments> {
+    async updatePayment(payment_id: number, data: Prisma.paymentsUpdateInput): Promise<payments> {
         return await this.db.payments.update({
             where: { id_payment: payment_id },
             data
         })
     }
 
-    async updatePaymentByStripeID(stripe_id: string, payment_state: Payment_states) {
+    async updatePaymentByStripeID(stripe_id: string, payment_state: payment_states) {
         const payment = await this.getPaymentByStripeID(stripe_id)
         
         return await this.db.payments.update({
@@ -70,7 +70,7 @@ export class PaymentsService {
         })
     }
 
-    async createPaymentForLogos(order: Orders, order_items: Order_item[]): Promise<Payments> {
+    async createPaymentForLogos(order: orders, order_items: Order_item[]): Promise<payments> {
         const user = await this.usersService.getUser(order.user_id)
 
         if(!user) throw new InternalErrorException(`[PaymentService] User not found. Payment cancelled.`)
@@ -127,7 +127,7 @@ export class PaymentsService {
           
           if (session.payment_status == 'paid') {
             const payment = await this._completePayment(body.session_id)
-            const order: Orders | null = payment ? await this.ordersService.getOrder(payment?.order_id) : null
+            const order: orders | null = payment ? await this.ordersService.getOrder(payment?.order_id) : null
 
             if(!order) return { payment_state: 'VERIFIED', ...payment }
 
@@ -261,28 +261,28 @@ export class PaymentsService {
         }
     }
 
-    private async _completePayment(stripe_id: string): Promise<Payments | null> {
-        const payment: Payments | null = await this.getPaymentByStripeID(stripe_id)
+    private async _completePayment(stripe_id: string): Promise<payments | null> {
+        const payment: payments | null = await this.getPaymentByStripeID(stripe_id)
 
         if (!payment) {
             console.error(`[PaymentService] Payment not found for stripe_id=${stripe_id}`)
             return null
         }
         
-        if(payment.state == Payment_states.COMPLETED) return payment
+        if(payment.state == payment_states.COMPLETED) return payment
 
         // Updating payments state
         await this.updatePayment(payment.id_payment, { 
-            state: Payment_states.COMPLETED 
+            state: payment_states.COMPLETED 
         })
 
         // Updating order state
         await this.ordersService.updateOrder(payment.order_id, {
-            state: Order_states.COMPLETED,
+            state: order_states.COMPLETED,
             completed_at: new Date(),
         })
 
-        payment.state = Payment_states.COMPLETED
+        payment.state = payment_states.COMPLETED
         
         // Updating Logos state
         const product_types_included = await this._updatedOrderItems(payment.order_id, true)
@@ -320,7 +320,7 @@ export class PaymentsService {
     }
 
     async _updatedOrderItems(order_id: number, logo_bought: boolean) {
-        const order_items: Order_items[] = await this.db.order_items.findMany({ 
+        const order_items: order_items[] = await this.db.order_items.findMany({ 
             where: { order_id: order_id }
         }) 
         let product_types_included = {

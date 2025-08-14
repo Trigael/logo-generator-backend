@@ -14,7 +14,7 @@ import { ImageGeneratorService } from 'src/image-generator/image-generator.servi
 import { DatabaseService } from 'src/database/database.service';
 import { PaymentsService } from 'src/payments/payments.service';
 import { PricesService } from 'src/prices/prices.service';
-import { Archived_logos, Currencies, Orders, Prisma, Prompted_logos, Users } from '@prisma/client';
+import { archived_logos, currencies, orders, Prisma, prompted_logos, users } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
 import { OrdersService } from 'src/orders/orders.service';
 import { Order_item } from 'src/utils/types.util';
@@ -40,11 +40,11 @@ export class LogoService {
         private readonly paymentsService: PaymentsService,
     ) {}
 
-    async createArchivedLogo(data: Prisma.Archived_logosCreateInput): Promise<Archived_logos> {
+    async createArchivedLogo(data: Prisma.archived_logosCreateInput): Promise<archived_logos> {
       return await this.db.archived_logos.create({ data })
     }
 
-    async getOrCreateArchivedLogo(prompted_logo_id: number): Promise<Archived_logos> {
+    async getOrCreateArchivedLogo(prompted_logo_id: number): Promise<archived_logos> {
       const logo = await this.db.archived_logos.findFirst({
         where: { prompted_logo_id: prompted_logo_id }
       })
@@ -58,7 +58,7 @@ export class LogoService {
       return logo
     }
 
-    async getArchivedLogo(archived_logo_id: number): Promise<Archived_logos | null> {
+    async getArchivedLogo(archived_logo_id: number): Promise<archived_logos | null> {
       return await this.db.archived_logos.findFirst({
         where: { id_archived_logo: archived_logo_id }
       })
@@ -70,7 +70,7 @@ export class LogoService {
       })
     }
 
-    async createPromptedLogo(data: Prisma.Prompted_logosCreateInput) {
+    async createPromptedLogo(data: Prisma.prompted_logosCreateInput) {
       return await this.db.prompted_logos.create({ data })
     }
 
@@ -125,7 +125,7 @@ export class LogoService {
 
         for(let i = 0; i < response.data.length; i++) {
           // Save picture into DB
-          const logo: Prompted_logos = await this.createPromptedLogo({
+          const logo: prompted_logos = await this.createPromptedLogo({
             prompt: { connect: { id_prompt: response.prompt.id_prompt}},
             url_to_logo: response.data[i].url,
             url_valid_to: new Date(now.getTime() + 60 * 60 * 1000),
@@ -151,7 +151,7 @@ export class LogoService {
 
       for(let i = 0; i < response.data.length; i++) {
         // Save picture into DB
-        const logo: Prompted_logos = await this.createPromptedLogo({
+        const logo: prompted_logos = await this.createPromptedLogo({
           prompt: { connect: { id_prompt: response.id_prompt}},
           id_from_model: response.data[i].id,
           filepath_to_logo: response.data[i].image_url.substring(response.data[i].image_url.indexOf('temp')),
@@ -171,14 +171,14 @@ export class LogoService {
       return new_response;
     }
 
-    async updatePromptedLogo(id: number, data: Prisma.Prompted_logosUpdateInput) {
+    async updatePromptedLogo(id: number, data: Prisma.prompted_logosUpdateInput) {
       return await this.db.prompted_logos.update({ 
         where: { id_prompted_logo: id },
         data: data
       })
     }
 
-    async updateArchivedLogo(id: number, data: Prisma.Archived_logosUpdateInput) {
+    async updateArchivedLogo(id: number, data: Prisma.archived_logosUpdateInput) {
       return await this.db.archived_logos.update({ 
         where: { id_archived_logo: id },
         data: data
@@ -187,14 +187,14 @@ export class LogoService {
 
     async buyLogo(body: BuyLogoDto) {
         // Get info for existing user or create new user
-        let user: Users = await this.usersService.getOrCreateGuestUser(body.email)
+        let user: users = await this.usersService.getOrCreateGuestUser(body.email)
         
-        // Users does not exists yet
+        // users does not exists yet
         user ??= await this.usersService.getOrCreateGuestUser(body.email)
 
         let order_item: Order_item[] = []
         let prompted_logo = await this.productTypesService.getGeneratedLogoProductType()
-        let prompted_logo_price = await this.pricesService.getPriceOfGeneratedLogo(body.currency ?? Currencies.EUR)
+        let prompted_logo_price = await this.pricesService.getPriceOfGeneratedLogo(body.currency ?? currencies.EUR)
 
         // Format logo_ids into order_items
         for(let i = 0; i < body.logo_ids.length; i++) {
@@ -213,8 +213,8 @@ export class LogoService {
         }
         
         // Create order
-        const order: Orders = await this.ordersService.createOrder(
-          user.id_user, body.currency ?? Currencies.EUR, order_item
+        const order: orders = await this.ordersService.createOrder(
+          user.id_user, body.currency ?? currencies.EUR, order_item
         )
 
         // Creating Payment

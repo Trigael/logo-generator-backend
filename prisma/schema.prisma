@@ -1,31 +1,217 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// prisma/schema.prisma
 datasource db {
-  provider  = "postgresql"
-  url  	    = env("DB_TRANSACTION_URL")
+  provider = "postgresql"
+  url      = env("DB_TRANSACTION_URL")
 }
 
-// ENUMS
-enum Pic_states {
-  TEMP 
+model users {
+  id_user    Int        @id(map: "Users_pkey") @default(autoincrement())
+  email      String
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  deteled_at DateTime?
+  deleted    Boolean    @default(false)
+  metadata   Json?
+  orders     orders[]
+  payments   payments[]
+  sessions   sessions[]
+}
+
+model payments {
+  id_payment Int            @id(map: "Payments_pkey") @default(autoincrement())
+  order_id   Int
+  user_id    Int
+  stripe_id  String         @default("")
+  state      payment_states @default(CREATED)
+  created_at DateTime       @default(now())
+  updated_at DateTime       @updatedAt
+  deteled_at DateTime?
+  deleted    Boolean        @default(false)
+  metadata   Json?
+  order      orders         @relation(fields: [order_id], references: [id_order], map: "Payments_order_id_fkey")
+  user       users          @relation(fields: [user_id], references: [id_user], map: "Payments_user_id_fkey")
+}
+
+model product_types {
+  id_product_type Int           @id(map: "Product_types_pkey") @default(autoincrement())
+  name            String        @unique(map: "Product_types_name_key")
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  deteled_at      DateTime?
+  deleted         Boolean       @default(false)
+  metadata        Json?
+  order_items     order_items[]
+  prices          prices[]
+}
+
+model prices {
+  id_prices       Int           @id(map: "Prices_pkey") @default(autoincrement())
+  product_type_id Int
+  amount_cents    Int
+  currency        currencies    @default(EUR)
+  valid_from      DateTime      @default(now())
+  valid_to        DateTime?
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+  deteled_at      DateTime?
+  deleted         Boolean       @default(false)
+  metadata        Json?
+  product_type    product_types @relation(fields: [product_type_id], references: [id_product_type], map: "Prices_product_type_id_fkey")
+}
+
+model sessions {
+  id_session String    @id(map: "Sessions_pkey") @default(uuid())
+  ip_address String
+  user_agent String
+  browser    String
+  user_id    Int?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deteled_at DateTime?
+  deleted    Boolean   @default(false)
+  metadata   Json?
+  user       users?    @relation(fields: [user_id], references: [id_user], map: "Sessions_user_id_fkey")
+}
+
+model prompts {
+  id_prompt          Int              @id(map: "Prompts_pkey") @default(autoincrement())
+  ai_model           String           @default("dall-e-3")
+  brand_name         String
+  slogan             String?
+  industry           String?
+  brand_colors       String?
+  logo_styles        String?
+  similiar_styles    String?
+  additional_details String?
+  things_to_exclude  String?
+  amount_to_generate Int              @default(1)
+  logo_resolution    logo_resolutions @default(RES_1024x1024)
+  whole_prompt       String
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+  deteled_at         DateTime?
+  deleted            Boolean          @default(false)
+  metadata           Json?
+  prompted_logos     prompted_logos[]
+}
+
+model prompted_logos {
+  id_prompted_logo   Int                 @id(map: "Prompted_logos_pkey") @default(autoincrement())
+  prompt_id          Int
+  url_valid_to       DateTime?
+  filepath_to_logo   String?
+  watermark_filepath String?
+  bought             Boolean             @default(false)
+  created_at         DateTime            @default(now())
+  updated_at         DateTime            @updatedAt
+  deteled_at         DateTime?
+  deleted            Boolean             @default(false)
+  metadata           Json?
+  id_from_model      String?
+  seed               Int?
+  url_to_logo        String?
+  archived_logos     archived_logos[]
+  prompt             prompts             @relation(fields: [prompt_id], references: [id_prompt], map: "Prompted_logos_prompt_id_fkey")
+  transformed_logos  transformed_logos[]
+}
+
+model archived_logos {
+  id_archived_logo  Int                 @id(map: "Archived_logos_pkey") @default(autoincrement())
+  prompted_logo_id  Int
+  filepath          String?
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+  deteled_at        DateTime?
+  deleted           Boolean             @default(false)
+  metadata          Json?
+  prompted_logo     prompted_logos      @relation(fields: [prompted_logo_id], references: [id_prompted_logo], map: "Archived_logos_prompted_logo_id_fkey")
+  order_items       order_items[]
+  transformed_logos transformed_logos[]
+}
+
+model transformed_logos {
+  id_transformed_logo Int                  @id(map: "Transformed_logos_pkey") @default(autoincrement())
+  prompted_logo_id    Int
+  archived_logo_id    Int
+  transformation_type transformation_types
+  filepath            String?
+  file_type           file_types
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @updatedAt
+  deteled_at          DateTime?
+  deleted             Boolean              @default(false)
+  metadata            Json?
+  archived_logo       archived_logos       @relation(fields: [archived_logo_id], references: [id_archived_logo], map: "Transformed_logos_archived_logo_id_fkey")
+  prompted_logo       prompted_logos       @relation(fields: [prompted_logo_id], references: [id_prompted_logo], map: "Transformed_logos_prompted_logo_id_fkey")
+}
+
+model orders {
+  id_order           Int           @id(map: "Orders_pkey") @default(autoincrement())
+  user_id            Int
+  state              order_states  @default(CREATED)
+  currency           currencies    @default(EUR)
+  total_amount_cents Int
+  completed_at       DateTime?
+  created_at         DateTime      @default(now())
+  updated_at         DateTime      @updatedAt
+  deteled_at         DateTime?
+  deleted            Boolean       @default(false)
+  metadata           Json?
+  Mails              mails[]
+  Order_items        order_items[]
+  user               users         @relation(fields: [user_id], references: [id_user], map: "Orders_user_id_fkey")
+  Payments           payments[]
+}
+
+model order_items {
+  order_id         Int
+  archived_logo_id Int?
+  currency         currencies      @default(EUR)
+  amount_cents     Int
+  created_at       DateTime        @default(now())
+  updated_at       DateTime        @updatedAt
+  deteled_at       DateTime?
+  deleted          Boolean         @default(false)
+  metadata         Json?
+  id_order_item    Int             @id(map: "Order_items_pkey") @default(autoincrement())
+  product_type_id  Int
+  archived_logo    archived_logos? @relation(fields: [archived_logo_id], references: [id_archived_logo], map: "Order_items_archived_logo_id_fkey")
+  order            orders          @relation(fields: [order_id], references: [id_order], map: "Order_items_order_id_fkey")
+  product_type     product_types   @relation(fields: [product_type_id], references: [id_product_type], map: "Order_items_product_type_id_fkey")
+}
+
+model mails {
+  id_mails    Int          @id(map: "Mails_pkey") @default(autoincrement())
+  order_id    Int?
+  mailjet_id  String?
+  to          String
+  subject     String
+  template_id Int
+  variables   Json
+  state       email_states @default(SENT)
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  deteled_at  DateTime?
+  deleted     Boolean      @default(false)
+  metadata    Json?
+  attachment  String[]
+  order       orders?      @relation(fields: [order_id], references: [id_order], map: "Mails_order_id_fkey")
+}
+
+enum pic_states {
+  TEMP
   ACTIVE
 }
 
-enum Currencies {
+enum currencies {
   CZK
   EUR
 }
 
-enum Payment_states {
+enum payment_states {
   CREATED
   UNPAID
   COMPLETED
@@ -33,315 +219,29 @@ enum Payment_states {
   REFUNDED
 }
 
-enum Transformation_types {
+enum transformation_types {
   UPSCALED
 }
 
-enum File_types {
+enum file_types {
   SVG
   PNG
   ZIP
   JPG
 }
 
-enum Order_states {
+enum order_states {
   CREATED
   FAILED
   COMPLETED
   REFUNDED
 }
 
-enum Logo_resolutions {
-  RES_1024x1024   @map("1024x1024")
+enum logo_resolutions {
+  RES_1024x1024 @map("1024x1024")
 }
 
-enum Email_states {
+enum email_states {
   SENT
   RECEIVED
-}
-
-// MODELS
-model Users {
-  id_user   Int   @id @default(autoincrement())
-
-  // Data
-  email   String
-
-  //
-  created_at DateTime     @default(now())  
-  updated_at DateTime     @updatedAt
-  deteled_at DateTime?
-  deleted   Boolean     @default(false) 
-  metadata    Json?
-
-  // FKs
-  Payments Payments[]
-  Sessions Sessions[]
-
-  Orders Orders[]
-}
-
-model Payments {
-  id_payment  Int   @id @default(autoincrement())
-
-  // Data
-  order_id    Int
-  user_id     Int
-  stripe_id   String            @default("")
-  state       Payment_states    @default(CREATED)
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  // FK Relations
-  order   Orders    @relation(fields: [order_id], references: [id_order])
-  user    Users     @relation(fields: [user_id], references: [id_user])
-}
-
-model Product_types {
-  id_product_type  Int   @id @default(autoincrement())
-
-  // Data
-  name    String    @unique
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  Prices Prices[]
-  Order_items Order_items[]
-  // FK Relations
-
-}
-
-model Prices {
-  id_prices  Int   @id @default(autoincrement())
-
-  // Data
-  product_type_id   Int
-  amount_cents      Int
-  currency          Currencies    @default(EUR)
-  valid_from        DateTime      @default(now())
-  valid_to          DateTime?
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  // FK Relations
-  product_type    Product_types   @relation(fields: [product_type_id], references: [id_product_type])
-}
-
-model Sessions {
-  id_session    String   @id @default(uuid())
-
-  // Data
-  ip_address    String
-  user_agent    String
-  browser       String
-  user_id       Int?
-
-  //
-  created_at  DateTime     @default(now())  
-  updated_at  DateTime     @updatedAt
-  deteled_at  DateTime?
-  deleted     Boolean     @default(false)
-  metadata    Json? 
-
-  // FKs
-  // FK Relations
-  user  Users?   @relation(fields: [user_id], references: [id_user])
-}
-
-model Prompts {
-  id_prompt    Int   @id @default(autoincrement())
-
-  // Data
-  ai_model            String              @default("dall-e-3")
-  brand_name          String
-  slogan              String?
-  brand_colors        String
-  logo_styles         String
-  additional_details  String?
-  things_to_exclude   String?
-  amount_to_generate  Int                 @default(1)
-  logo_resolution     Logo_resolutions    @default(RES_1024x1024)
-  whole_prompt        String
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  Prompted_logos Prompted_logos[]
-
-  // FK Relations
-}
-
-model Prompted_logos {
-  id_prompted_logo  Int   @id @default(autoincrement())
-
-  // Data
-  prompt_id           Int
-  id_from_model       String? // ID retrieved AI Model that generated it
-  url_to_logo         String?
-  url_valid_to        DateTime?
-  filepath_to_logo    String?
-  watermark_filepath  String?
-  bought              Boolean   @default(false)
-  seed                Int?
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  // FK Relations
-  prompt  Prompts   @relation(fields: [prompt_id], references: [id_prompt])
-
-  Archived_logos Archived_logos[]
-
-  Transformed_logos Transformed_logos[]
-}
-
-model Archived_logos {
-  id_archived_logo  Int   @id @default(autoincrement())
-
-  // Data
-  prompted_logo_id    Int
-  filepath            String?
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  Transformed_logos Transformed_logos[]
-  Order_items Order_items[]
-
-  // FK Relations
-  prompted_logo   Prompted_logos    @relation(fields: [prompted_logo_id], references: [id_prompted_logo])
-}
-
-model Transformed_logos {
-  id_transformed_logo  Int   @id @default(autoincrement())
-
-  // Data
-  prompted_logo_id    Int
-  archived_logo_id    Int
-  transformation_type   Transformation_types
-  filepath              String?
-  file_type             File_types
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  // FK Relations
-  prompted_logo   Prompted_logos    @relation(fields: [prompted_logo_id], references: [id_prompted_logo])
-  archived_logo   Archived_logos    @relation(fields: [archived_logo_id], references: [id_archived_logo])
-}
-
-model Orders {
-  id_order  Int   @id @default(autoincrement())
-
-  // Data
-  user_id               Int
-  state                 Order_states    @default(CREATED)
-  currency              Currencies      @default(EUR)
-  total_amount_cents    Int
-  completed_at          DateTime?
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  Order_items Order_items[]
-  Payments Payments[]
-  Mails Mails[]
-
-  // FK Relations
-  user    Users   @relation(fields: [user_id], references: [id_user])
-
-}
-
-model Order_items {
-  // Every table in Prisma needs ID
-  id_order_item  Int   @id @default(autoincrement())
-
-  // Data
-  order_id            Int
-  archived_logo_id    Int?
-  product_type_id     Int
-  currency            Currencies    @default(EUR)
-  amount_cents        Int           
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  // FK Relations
-  order           Orders            @relation(fields: [order_id], references: [id_order])
-  archived_logo   Archived_logos?    @relation(fields: [archived_logo_id], references: [id_archived_logo])
-  product_type    Product_types     @relation(fields: [product_type_id], references: [id_product_type])
-}
-
-model Mails {
-  // COMPOSITE PRIMARY KEY
-  id_mails  Int   @id @default(autoincrement())
-
-  // Data 
-  order_id      Int?
-  mailjet_id    String?
-  to            String
-  subject       String
-  template_id   Int
-  variables     Json
-  state         Email_states    @default(SENT)
-  attachment    String[]
-
-  //
-  created_at    DateTime     @default(now())  
-  updated_at    DateTime     @updatedAt
-  deteled_at    DateTime?
-  deleted       Boolean     @default(false)
-  metadata      Json? 
-
-  // FKs
-  // FK Relations
-  order   Orders?    @relation(fields: [order_id], references: [id_order])
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Product_types } from '@prisma/client';
+import { product_types } from '@prisma/client';
 
 // Services
 import { DatabaseService } from 'src/database/database.service';
@@ -13,19 +13,19 @@ export class ProductTypesService {
         private readonly db: DatabaseService,
     ) {}
 
-    async getProductType(product_type_id: number): Promise<Product_types | null> {
+    async getProductType(product_type_id: number): Promise<product_types | null> {
         return await this.db.product_types.findFirst({ 
             where: { id_product_type: product_type_id }
         })
     }
 
-    async getProductTypeByName(product_type_name: string): Promise<Product_types | null> {
+    async getProductTypeByName(product_type_name: string): Promise<product_types | null> {
         return await this.db.product_types.findFirst({ 
             where: { name: product_type_name }
         })
     }
 
-    async getGeneratedLogoProductType(): Promise<Product_types | null> {
+    async getGeneratedLogoProductType(): Promise<product_types | null> {
         return await this.db.product_types.findFirst({ 
             where: { name: prompted_logo_name }
         })

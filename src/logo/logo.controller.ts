@@ -8,7 +8,7 @@ import { PricesService } from 'src/prices/prices.service';
 // DTOs
 import { GenerateLogoDto } from './dto/generate-logo.dto';
 import { BuyLogoDto } from './dto/buy-logo.dto';
-import { Currencies } from '@prisma/client';
+import { currencies } from '@prisma/client';
 import { BuyLogoResponseDto } from './dto/responses/buy-logo-response.dto';
 import { ApiCreatedResponse, ApiResponse } from '@nestjs/swagger';
 
@@ -35,7 +35,7 @@ export class LogoController {
   }
 
   @Post('price')
-  async getGeneratedLogoPrice(@Body() body: { currency: Currencies }) {
+  async getGeneratedLogoPrice(@Body() body: { currency: currencies }) {
     const price = await this.pricesService.getPriceOfGeneratedLogo(body.currency)
 
     return {

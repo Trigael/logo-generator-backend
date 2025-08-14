@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Currencies, Prices, Product_types } from '@prisma/client';
+import { currencies, prices, product_types } from '@prisma/client';
 import { RequestContextService } from 'src/common/request-context.service';
 
 import { DatabaseService } from 'src/database/database.service';
@@ -13,8 +13,8 @@ export class PricesService {
         private readonly requestContext: RequestContextService,
     ) {}
 
-    async getPriceOfGeneratedLogo(currency: Currencies): Promise<Prices | null> {
-        const product_type: Product_types | null = await this.productTypesService.getGeneratedLogoProductType()
+    async getPriceOfGeneratedLogo(currency: currencies): Promise<prices | null> {
+        const product_type: product_types | null = await this.productTypesService.getGeneratedLogoProductType()
 
         if(!product_type) return null
 
@@ -29,7 +29,7 @@ export class PricesService {
             return await this.db.prices.findFirst({
                 where : { 
                     product_type_id: product_type.id_product_type,
-                    currency: Currencies.EUR
+                    currency: currencies.EUR
                 }
             })
         }
@@ -37,7 +37,7 @@ export class PricesService {
         return price
     }
 
-    async getPriceOfProductType(currency: Currencies, product_type_id: number): Promise<Prices | null> {
+    async getPriceOfProductType(currency: currencies, product_type_id: number): Promise<prices | null> {
         return await this.db.prices.findFirst({
             where : { 
                 product_type_id: product_type_id,

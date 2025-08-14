@@ -1,6 +1,6 @@
 // src/sessions/session.service.ts
 import { Injectable } from '@nestjs/common';
-import { Prisma, Sessions } from '@prisma/client';
+import { Prisma, sessions } from '@prisma/client';
 import { UAParser } from 'ua-parser-js';
 
 // Serivce
@@ -10,20 +10,20 @@ import { DatabaseService } from 'src/database/database.service';
 export class SessionsService {
   constructor(private readonly db: DatabaseService) {}
 
-  async getSession(sessionId: string): Promise<Sessions | null> {
+  async getSession(sessionId: string): Promise<sessions | null> {
     return this.db.sessions.findUnique({
       where: { id_session: sessionId },
     });
   }
 
-  async updateSession(sessionId: string, data: Prisma.SessionsUpdateInput) {
+  async updateSession(sessionId: string, data: Prisma.sessionsUpdateInput) {
     return this.db.sessions.update({
       where: { id_session: sessionId },
       data: data
     })
   }
 
-  async createSession(ipAddress: string, userAgent: string): Promise<Sessions> {
+  async createSession(ipAddress: string, userAgent: string): Promise<sessions> {
     const parser = new UAParser(userAgent);
     const ua = parser.getResult();
     

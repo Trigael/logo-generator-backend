@@ -1,4 +1,4 @@
-import { Currencies } from '@prisma/client';
+import { currencies } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
