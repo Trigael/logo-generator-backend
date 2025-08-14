@@ -120,10 +120,10 @@ export class ImageGeneratorService {
           const original = Buffer.from(res.data);
 
           // Clean artifacts
-          const cleaned = await this.textCleaner.clean(original, body.brand_name, body.slogan);
+          // const cleaned = await this.textCleaner.clean(original, body.brand_name, body.slogan);
         
           // Create transparent PNG
-          const png_buffer = await this.imageFormatter.formatIntoTransparentPng(cleaned);
+          const png_buffer = await this.imageFormatter.formatIntoTransparentPng(original);
           
           img.image_url = await this.s3.uploadImage(png_buffer, `temp/temp_logo-${img.id}.png`, 'image/png', true);
         }),
