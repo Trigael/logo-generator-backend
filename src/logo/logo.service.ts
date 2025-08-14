@@ -128,7 +128,8 @@ export class LogoService {
           const logo: Prompted_logos = await this.createPromptedLogo({
             prompt: { connect: { id_prompt: response.prompt.id_prompt}},
             url_to_logo: response.data[i].url,
-            url_valid_to: new Date(now.getTime() + 60 * 60 * 1000)
+            url_valid_to: new Date(now.getTime() + 60 * 60 * 1000),
+            seed: response.data.seed
           })
 
           response.data[i].id = logo.id_prompted_logo
