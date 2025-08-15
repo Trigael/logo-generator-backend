@@ -93,14 +93,11 @@ export class TextCleanerService implements OnModuleInit, OnModuleDestroy {
     }
   
     // Generating safe-zone (Where logo is)
-    const safe = await this._autoSafeZone(buf, W, H, ocrBoxes, {
-      left: 0.06,  // 6 % widTh
-      right: 0.06,
-      top: 0.04,   // 4 % height
-      bottom: 0.10 // 10 % height (cause of slogan)
+    const safe = await this._autoSafeZoneFullWidth(buf, W, H, ocrBoxes, {
+      top: 0.03,
+      bottom: 0.05,
     });
-    
-    
+
     // Extra bottom security cause of slogan
     const extraDown = Math.round(H * 0.02);
     const safeX = Math.max(0, safe.x);
@@ -329,217 +326,182 @@ export class TextCleanerService implements OnModuleInit, OnModuleDestroy {
     return buf;
   }
 
-  private async _autoSafeZone(
+  private async _autoSafeZoneFullWidth(
     buf: Buffer,
     W: number,
     H: number,
     ocrBoxes: OcrBox[],
-    pad?: Insets,   
+    pad?: Insets
   ): Promise<{ x: number; y: number; x2: number; y2: number }> {
-    // CCL Binarization (Connected Component Labeling)
-    const thr = await this.sharp(buf)
+    // --- 1) Greyscale + silná binarizace (potlačí watermarky)
+    const g = await this.sharp(buf)
       .greyscale()
-      .blur(0.4)
-      .threshold(210)
+      .blur(0.6)
       .raw()
       .toBuffer({ resolveWithObject: true });
+    const w = g.info.width!, h = g.info.height!;
+    const gray = g.data as Buffer;
   
-    const w = thr.info.width!, h = thr.info.height!;
-    const bin = thr.data; // 0|255
-    const data = new Uint8Array(bin.length);
-
-    for (let i = 0; i < bin.length; i++) data[i] = (bin[i] === 0) ? 1 : 0;
+    const THR = 233; // 230–238 podle datasetu
+    const bin = new Uint8Array(w * h);
+    for (let i = 0; i < gray.length; i++) bin[i] = gray[i] < THR ? 1 : 0; // 1=ink/dark
   
-    // --- CCL (8-neighbours) → components ---
-    const lab = new Int32Array(w * h);
-    const idx = (x: number, y: number) => y * w + x;
-    let label = 0;
-    const comps: { x: number; y: number; x2: number; y2: number; area: number; cx: number; cy: number }[] = [];
+    // --- 2) Střední pás šířky (ignoruj okraje)
+    const x0 = Math.floor(W * 0.18);
+    const x1 = Math.ceil(W * 0.82);
+    const bandW = Math.max(1, x1 - x0);
   
-    for (let yy = 0; yy < h; yy++) {
-      for (let xx = 0; xx < w; xx++) {
-        if (data[idx(xx, yy)] === 1 && lab[idx(xx, yy)] === 0) {
-          label++;
-
-          let minx = xx, miny = yy, maxx = xx, maxy = yy, area = 0, sx = 0, sy = 0;
-          const st: Array<[number, number]> = [[xx, yy]];
-
-          lab[idx(xx, yy)] = label;
-
-          while (st.length) {
-            const [cx, cy] = st.pop()!;
-
-            area++; sx += cx; sy += cy;
-
-            if (cx < minx) minx = cx; if (cy < miny) miny = cy;
-            if (cx > maxx) maxx = cx; if (cy > maxy) maxy = cy;
-
-            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-              if (!dx && !dy) continue;
-
-              const nx = cx + dx, ny = cy + dy;
-
-              if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-                const id = idx(nx, ny);
-
-                if (data[id] === 1 && lab[id] === 0) {
-                  lab[id] = label;
-                  st.push([nx, ny]);
-                }
-              }
-            }
-          }
-
-          const cx = sx / area, cy = sy / area;
-
-          comps.push({ x: minx, y: miny, x2: maxx + 1, y2: maxy + 1, area, cx, cy });
-        }
+    // --- 3) Per-row metriky: hustota + počet přechodů (edge komplexita)
+    const density = new Float32Array(h);
+    const trans   = new Float32Array(h);
+  
+    for (let y = 0; y < h; y++) {
+      const row = y * w;
+      let dark = 0, changes = 0;
+      let prev = bin[row + x0];
+      for (let x = x0; x < x1; x++) {
+        const v = bin[row + x];
+        dark += v;
+        if (x > x0 && v !== prev) changes++;
+        prev = v;
       }
+      density[y] = dark / bandW;                 // [0..1]
+      trans[y]   = changes / Math.max(1, bandW); // [0..1]
     }
   
-    // --- "logo" Candidate: big component near the center ---
-    const midX0 = W * 0.18, midX1 = W * 0.82;
-    const midY0 = H * 0.15, midY1 = H * 0.70;
-    const minLogoArea = Math.max(400, Math.floor(W * H * 0.01));
+    // --- 4) Vyhlazení
+    const smooth = (arr: Float32Array, win: number) => {
+      const out = new Float32Array(arr.length);
+      let acc = 0;
+      for (let i = 0; i < arr.length; i++) {
+        acc += arr[i];
+        if (i >= win) acc -= arr[i - win];
+        out[i] = acc / Math.min(win, i + 1);
+      }
+      return out;
+    };
+    const win = Math.max(3, Math.floor(H * 0.02));
+    const dS = smooth(density, win);
+    const tS = smooth(trans,   win);
   
-    const logo = comps
-      .map(c => ({ x: c.x, y: c.y, w: c.x2 - c.x, h: c.y2 - c.y, area: c.area, cx: c.cx, cy: c.cy }))
-      .filter(c =>
-        c.area >= minLogoArea &&
-        c.cx >= midX0 && c.cx <= midX1 &&
-        c.cy >= midY0 && c.cy <= midY1
-      )
-      .sort((a, b) => b.area - a.area)[0];
+    // --- 5) Skóre: musí být i tmavé, i „strukturní“
+    const score = new Float32Array(h);
+    for (let y = 0; y < h; y++) score[y] = dS[y] * tS[y];
   
-    // --- text lines from OCR (brand/slogan) ---
+    const yMin = Math.floor(H * 0.12);
+    const yMax = Math.ceil (H * 0.92);
+    const minH = Math.max(28, Math.floor(H * 0.08));
+    const maxH = Math.max(minH, Math.floor(H * 0.55));
+  
+    // prefix součty
+    const pref = new Float32Array(h + 1);
+    for (let i = 0; i < h; i++) pref[i + 1] = pref[i] + score[i];
+  
+    let bestY0 = Math.floor(H * 0.35);
+    let bestY1 = Math.ceil (H * 0.65);
+    let bestSum = -1;
+  
+    for (let y0 = yMin; y0 <= yMax - minH; y0++) {
+      const y1min = y0 + minH;
+      const y1max = Math.min(yMax, y0 + maxH);
+      const tryEnd = (y1: number) => {
+        const s = pref[y1] - pref[y0];
+        if (s > bestSum) { bestSum = s; bestY0 = y0; bestY1 = y1; }
+      };
+      tryEnd(y1min);
+      tryEnd(Math.floor((y1min + y1max) / 2));
+      tryEnd(y1max);
+    }
+  
+    // --- 6) Přilep „velké“ OCR řádky (brand/slogan), ne mikrotext
     const MIN_H_TXT = Math.max(10, Math.floor(H * 0.03));
-    const MAX_H_TXT = Math.floor(H * 0.14);
+    const MAX_H_TXT = Math.floor(H * 0.16);
+    const MIN_W_TXT = Math.floor(W * 0.35);
+  
     const textLines = this._mergeNearby(
       (ocrBoxes || []).filter(b => {
-        const wok = b.w >= W * 0.25;
         const hok = b.h >= MIN_H_TXT && b.h <= MAX_H_TXT;
-        const yOk = b.y >= H * 0.20 && (b.y + b.h) <= H * 0.92;
-        return wok && hok && yOk;
+        const wok = b.w >= MIN_W_TXT;
+        const yOk = b.y >= H * 0.10 && (b.y + b.h) <= H * 0.95;
+        return hok && wok && yOk;
       }),
       Math.round(W * 0.01)
     );
   
-    // --- union (logo + text) → base box ---
-    let x: number, y: number, x2: number, y2: number;
-    const pool: Array<{ x: number; y: number; w: number; h: number }> = [];
-
-    if (logo) pool.push(logo);
-
-    textLines.forEach(b => pool.push({ x: b.x, y: b.y, w: b.w, h: b.h }));
-  
-    if (pool.length) {
-      x  = Math.min(...pool.map(b => b.x));
-      y  = Math.min(...pool.map(b => b.y));
-      x2 = Math.max(...pool.map(b => b.x + b.w));
-      y2 = Math.max(...pool.map(b => b.y + b.h));
-    } else {
-      // fallback: center
-      x = W * 0.35; x2 = W * 0.65; y = H * 0.35; y2 = H * 0.65;
+    if (textLines.length) {
+      const tMinY = Math.min(...textLines.map(b => b.y));
+      const tMaxY = Math.max(...textLines.map(b => b.y + b.h));
+      bestY0 = Math.min(bestY0, tMinY);
+      bestY1 = Math.max(bestY1, tMaxY);
     }
   
-    // --- base padding ---
-    const padX = Math.round(W * 0.08);
-    const padYTop = Math.round(H * 0.06);
-    const padYBot = Math.round(H * 0.10);
-  
-    x  = Math.max(0, x - padX);
-    y  = Math.max(0, y - padYTop);
-    x2 = Math.min(W, x2 + padX);
-    y2 = Math.min(H, y2 + padYBot);
-  
-    // --- explicit offset ---
-    const off = this.resolveInsets(pad, W, H);
-    x  -= off.left;
-    y  -= off.top;
-    x2 += off.right;
-    y2 += off.bottom;
-  
-    // --- additional addaptive padding near 'ink' on the edges ---
-    const sampleStrip = (sx: number, sy: number, ex: number, ey: number) => {
-      let dark = 0, tot = 0;
-      const x0 = Math.max(0, Math.min(sx, ex)), y0 = Math.max(0, Math.min(sy, ey));
-      const x1 = Math.min(w, Math.max(sx, ex)), y1 = Math.min(h, Math.max(sy, ey));
-
-      for (let yy = y0; yy < y1; yy++) {
-        const row = yy * w;
-
-        for (let xx = x0; xx < x1; xx++) {
-          if (bin[row + xx] === 0) dark++; // 0 = "ink"
-
-          tot++;
+    // --- 6b) Refinement: flood-fill POUZE po hranách (edge pixelech)
+    {
+      const y0 = Math.max(0, Math.floor(bestY0 - H * 0.06));
+      const y1 = Math.min(H - 1, Math.ceil (bestY1 + H * 0.08));
+      const hh = y1 - y0 + 1;
+    
+      // edge pixel = tmavý a má v 8-sousedství světlého souseda (přechod)
+      const isEdge = (xx: number, yy: number) => {
+        if (xx < 0 || xx >= W || yy < 0 || yy >= H) return false;
+        if (bin[yy * w + xx] === 0) return false; // světlý (pozadí)
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = xx + dx, ny = yy + dy;
+          if (nx >= 0 && nx < W && ny >= 0 && ny < H) {
+            if (bin[ny * w + nx] === 0) return true;
+          }
+        }
+        return false;
+      };
+    
+      // multi-seed po celé výšce okna, v širším pásu
+      const xs0 = Math.floor(W * 0.14);
+      const xs1 = Math.ceil (W * 0.86);
+      const seeds: Array<[number, number]> = [];
+      for (let yy = Math.max(bestY0, 0); yy <= Math.min(bestY1, H - 1); yy++) {
+        for (let xx = xs0; xx < xs1; xx += 2) if (isEdge(xx, yy)) seeds.push([xx, yy]);
+      }
+    
+      if (seeds.length) {
+        const visited = new Uint8Array(w * hh);
+        const idxL = (xx: number, yy: number) => (yy - y0) * w + xx;
+        const stack = seeds.slice();
+      
+        let minY = H, maxY = -1;
+        for (const [sx, sy] of seeds) visited[idxL(sx, sy)] = 1;
+      
+        while (stack.length) {
+          const [cx, cy] = stack.pop()!;
+          if (cy < minY) minY = cy;
+          if (cy > maxY) maxY = cy;
+        
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue;
+            const nx = cx + dx, ny = cy + dy;
+            if (nx < 0 || nx >= W || ny < y0 || ny > y1) continue;
+            const li = idxL(nx, ny);
+            if (visited[li]) continue;
+            if (isEdge(nx, ny)) {
+              visited[li] = 1;
+              stack.push([nx, ny]);
+            }
+          }
+        }
+      
+        if (maxY >= minY) {
+          bestY0 = Math.max(bestY0, minY);
+          bestY1 = Math.min(Math.max(bestY1, maxY), H - 1);
         }
       }
-
-      return tot ? dark / tot : 0;
-    };
-  
-    const maxGrowX = Math.round(W * 0.12);
-    const maxGrowY = Math.round(H * 0.12);
-    const stepX = Math.max(4, Math.round(W * 0.01));
-    const stepY = Math.max(4, Math.round(H * 0.01));
-    const densThresh = 0.015;
-  
-    // left
-    let grow = 0;
-
-    while (grow < maxGrowX) {
-      const d = sampleStrip(Math.max(0, x - (grow + stepX)), y, Math.max(0, x - grow), y2);
-
-      if (d < densThresh) break;
-
-      grow += stepX;
     }
-    x -= grow;
   
-    // right
-    grow = 0;
-    
-    while (grow < maxGrowX) {
-      const d = sampleStrip(Math.min(W, x2 + grow), y, Math.min(W, x2 + grow + stepX), y2);
-
-      if (d < densThresh) break;
-
-      grow += stepX;
-    }
-
-    x2 += grow;
+    // --- 7) Jemný vertikální pad; horizontálně full-width
+    const off = this.resolveInsets(pad, W, H);
+    const y  = Math.max(0, Math.round(bestY0 - H * 0.03) - (off.top ?? 0));
+    const y2 = Math.min(H, Math.round(bestY1 + H * 0.05) + (off.bottom ?? 0));
   
-    // top
-    grow = 0;
-
-    while (grow < maxGrowY) {
-      const d = sampleStrip(x, Math.max(0, y - (grow + stepY)), x2, Math.max(0, y - grow));
-
-      if (d < densThresh) break;
-
-      grow += stepY;
-    }
-
-    y -= grow;
-  
-    // bottom
-    grow = 0;
-
-    while (grow < maxGrowY) {
-      const d = sampleStrip(x, Math.min(H, y2 + grow), x2, Math.min(H, y2 + grow + stepY));
-
-      if (d < densThresh) break;
-
-      grow += stepY;
-    }
-
-    y2 += grow;
-  
-    // --- clamp & return ---
-    return this.clampRect(
-      { x: Math.round(x), y: Math.round(y), x2: Math.round(x2), y2: Math.round(y2) },
-      W, H
-    );
+    return this.clampRect({ x: 0, y, x2: W, y2 }, W, H);
   }
   //#endregion
 }
