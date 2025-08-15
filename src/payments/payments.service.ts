@@ -73,7 +73,12 @@ export class PaymentsService {
     async createPaymentForLogos(order: orders, order_items: Order_item[]): Promise<payments> {
         const user = await this.usersService.getUser(order.user_id)
 
-        if(!user) throw new InternalErrorException(`[PaymentService] User not found. Payment cancelled.`)
+        if(!user) {
+            this.logger.error(`[PaymentService] User not found. Payment cancelled for order ${order.id_order}.`, {
+                metadata: { order, order_items }
+            })
+            throw new InternalErrorException(`[PaymentService] User not found. Payment cancelled.`)
+        }
 
         // Create payment in DB
         let db_response: any = await this.db.payments.create({ data: {
@@ -134,7 +139,8 @@ export class PaymentsService {
             // Logging payment intent
             this.logger.log(`Payment ${payment?.id_payment} was successfuly verified`, {
                 metadata: {
-                    payment_id: payment?.id_payment
+                    payment_id: payment?.id_payment,
+                    session_id: body.session_id,
                 }
             })
 

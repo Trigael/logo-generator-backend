@@ -9,6 +9,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable } from '@nestjs/common';
 import { CONFIG_OPTIONS, ConfigService } from 'src/config/config.service';
+import { LoggerService } from 'src/logger/logger.service';
 import { InternalErrorException } from 'src/utils/exceptios';
 
 import { getSecret } from 'src/utils/helpers.util';
@@ -27,6 +28,7 @@ export class S3Service {
 
   constructor(
     private readonly config: ConfigService,
+    private readonly logger: LoggerService,
   ) {}
 
   async onModuleInit() {
@@ -60,7 +62,11 @@ export class S3Service {
 
       return this.getImage(key)
     } catch (error) {
-      throw new InternalErrorException(`[S3] Internal error occured: ${error}`)
+      this.logger.error(`[S3] Internal error occured during image upload: ${error}`, {
+        metadata: { error }
+      })
+
+      throw new InternalErrorException(`[S3] Internal error occured during image upload: ${error.message}`)
     }
   }
 
@@ -87,7 +93,12 @@ export class S3Service {
       return signedUrl;
     } catch (error) {
       console.error(`[S3] Error while getting image URL for key "${key}":`, error);
-      throw new InternalErrorException(`[S3] Cannot get image: ${error}`);
+
+      this.logger.error(`[S3] Error while getting image URL for key "${key}"`, {
+        metadata: { error }
+      })
+
+      throw new InternalErrorException(`[S3] Cannot get image: ${error.message}`);
     }
   }
 
@@ -125,7 +136,11 @@ export class S3Service {
     } catch (error) {
       console.log(`[S3] Error occured during moving object: ${JSON.stringify(error)}`)
 
-      throw new InternalErrorException(`[S3] Error occured during moving object: ${JSON.stringify(error)}`)
+      this.logger.error(`[S3] Error occured during moving object: ${JSON.stringify(error)}`, {
+        metadata: { error }
+      })
+
+      throw new InternalErrorException(`[S3] Error occured during moving object: ${JSON.stringify(error.message)}`)
     }
   }
 }

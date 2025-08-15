@@ -21,6 +21,7 @@ import { S3Service } from 'src/s3/s3.service';
 import { GeneratedImg } from 'src/utils/types.util';
 import { TextCleanerService } from 'src/text-cleaner/text-cleaner.service';
 import { ImageFormatterService } from 'src/image-formatter/image-formatter.service';
+import { LoggerService } from 'src/logger/logger.service';
 
 
 @Injectable()
@@ -44,6 +45,7 @@ export class ImageGeneratorService {
         private readonly s3: S3Service,
         private readonly textCleaner: TextCleanerService,
         private readonly imageFormatter: ImageFormatterService,
+        private readonly logger: LoggerService,
 
         @Inject(forwardRef(() => ConfigService))
         private readonly config: ConfigService,
@@ -422,6 +424,9 @@ export class ImageGeneratorService {
       } catch (error) {
         console.error(`[FLUX GENERATION] Image generation failed at ${position}`);
         console.error(' * Error:', error);
+        this.logger.error(`[FLUX GENERATION] Image generation failed at ${position}`, {
+          metadata: { prompt }
+        })
 
         throw new InternalErrorException(
           'Failed to generate images via Flux',
@@ -455,11 +460,19 @@ export class ImageGeneratorService {
       const pollingUrl = response.data;
       
       if (!pollingUrl) {
+        this.logger.error(`[ImageGeneration] Missing polling_url in response`, {
+          metadata: { prompt }
+        })
+
         throw new InternalErrorException(`[ImageGeneration] Missing polling_url in response`);
       }
     
       return pollingUrl;
       } catch (error) {
+        this.logger.error(`[ImageGeneration] Failed to generate image. Error: ${error}`, {
+          metadata: { prompt, error }
+        })
+
         throw new InternalErrorException(`[ImageGeneration] Failed to generate image. Error: ${error}`)
       }
     }
@@ -501,6 +514,8 @@ export class ImageGeneratorService {
       
         await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
       }
+
+      this.logger.error('[ImageRetrieval] Polling timeout: Image generation did not complete in time')
     
       throw new InternalErrorException('[ImageRetrieval] Polling timeout: Image generation did not complete in time');
     }
