@@ -113,6 +113,7 @@ export class ImageGeneratorService {
 
       // Generating images through Flux
       let generated_imgs: GeneratedImg[] = await this._generateThroughFlux1(img_prompts)
+      const temp_watermarks: Buffer[] = []
 
       // Save images locally
       await Promise.all(
@@ -122,18 +123,20 @@ export class ImageGeneratorService {
           const original = Buffer.from(res.data);
 
           // Clean artifacts
-          // const cleaned = await this.textCleaner.clean(original, body.brand_name, body.slogan);
-        
+          const cleaned = await this.textCleaner.clean(original, body.brand_name, body.slogan);
+          console.log(cleaned)
           // Create transparent PNG
-          const png_buffer = await this.imageFormatter.formatIntoTransparentPng(original);
+          const png_buffer = await this.imageFormatter.formatIntoTransparentPng(cleaned);
           
+          temp_watermarks.push(cleaned)
+
           img.image_url = await this.s3.uploadImage(png_buffer, `temp/temp_logo-${img.id}.png`, 'image/png', true);
         }),
       );
 
       // Create watermarked versions
       for(let i = 0; i < generated_imgs.length; i++) {
-        generated_imgs[i].watermarked_url = await this.watermarkImage(generated_imgs[i].image_url, generated_imgs[i].id + `_` + Date.now())
+        generated_imgs[i].watermarked_url = await this.watermarkImage(temp_watermarks[i], generated_imgs[i].id + `_` + Date.now())
       }
 
       return {
@@ -229,13 +232,10 @@ export class ImageGeneratorService {
         }
     }
 
-    async watermarkImage(image_url: string, name: string): Promise<string> {
+    async watermarkImage(image_buffer: Buffer, name: string): Promise<string> {
       try {
-        // Download picture
-        const jpgRes = await axios.get(image_url, { responseType: 'arraybuffer' });
-
         // Add watermark
-        const watermarked = await this._addDiagonalWatermark(jpgRes.data, 'LOGONEST.AI');
+        const watermarked = await this._addDiagonalWatermark(image_buffer, 'LOGONEST.AI');
 
         // Compress image
         const compressedBuffer = await this.sharp(watermarked)
@@ -279,8 +279,9 @@ export class ImageGeneratorService {
     }
 
     private async _addDiagonalWatermark(imageBuffer: Buffer, watermarkText: string): Promise<Buffer> {
-      const width = 1024;
-      const height = 1024;
+      const meta = await this.sharp(imageBuffer).metadata();
+      const width = meta.width ?? 1024;
+      const height = meta.height ?? 1024;
 
       const canvas = createCanvas(width, height);
       const ctx = canvas.getContext('2d');
