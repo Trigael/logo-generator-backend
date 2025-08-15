@@ -113,7 +113,6 @@ export class ImageGeneratorService {
 
       // Generating images through Flux
       let generated_imgs: GeneratedImg[] = await this._generateThroughFlux1(img_prompts)
-      const temp_watermarks: Buffer[] = []
 
       // Save images locally
       await Promise.all(
@@ -123,12 +122,10 @@ export class ImageGeneratorService {
           const original = Buffer.from(res.data);
 
           // Clean artifacts
-          const cleaned = await this.textCleaner.clean(original, body.brand_name, body.slogan);
-          console.log(cleaned)
+          const cleaned = await this.textCleaner.clean(original, body.brand_name, body.slogan, { mode: 'solid' });
+          
           // Create transparent PNG
           const png_buffer = await this.imageFormatter.formatIntoTransparentPng(cleaned);
-          
-          temp_watermarks.push(cleaned)
 
           img.image_url = await this.s3.uploadImage(png_buffer, `temp/temp_logo-${img.id}.png`, 'image/png', true);
         }),
@@ -136,7 +133,8 @@ export class ImageGeneratorService {
 
       // Create watermarked versions
       for(let i = 0; i < generated_imgs.length; i++) {
-        generated_imgs[i].watermarked_url = await this.watermarkImage(temp_watermarks[i], generated_imgs[i].id + `_` + Date.now())
+        const original = await this._fetchImageAsBuffer(generated_imgs[i].image_url);
+        generated_imgs[i].watermarked_url = await this.watermarkImage(original, generated_imgs[i].id + `_` + Date.now())
       }
 
       return {
@@ -243,9 +241,7 @@ export class ImageGeneratorService {
           .toBuffer();
 
         // Upload compressed watermarked image onto bucket
-        const url = await this.s3.uploadImage(compressedBuffer, 'watermarked/' + name + '.png', 'image/png', true);
-
-        return url;
+        return await this.s3.uploadImage(compressedBuffer, 'watermarked/' + name + '.png', 'image/png', true);
       } catch (error) {
         console.error('[Watermark] Failed:', error);
         throw new InternalErrorException(`[Watermark] Failed: ${error.message}`);
@@ -584,5 +580,31 @@ export class ImageGeneratorService {
       const key = `${filename}`;
     
       return this.s3.uploadImage(buffer, key);
+    }
+
+    async _fetchImageAsBuffer(
+      url: string,
+      { maxBytes = 15 * 1024 * 1024, timeoutMs = 8000 } = {}
+    ): Promise<Buffer> {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(new Error('Timeout')), timeoutMs);
+    
+      try {
+        const res = await fetch(url, { redirect: 'follow', signal: ac.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.startsWith('image/')) throw new Error(`Nečekaný Content-Type: ${ct}`);
+      
+        const len = Number(res.headers.get('content-length') || 0);
+        if (len && len > maxBytes) throw new Error(`Soubor je příliš velký (${len} B)`);
+      
+        const ab = await res.arrayBuffer();
+        const buf = Buffer.from(ab);
+        if (buf.byteLength > maxBytes) throw new Error(`Soubor je příliš velký (${buf.byteLength} B)`);
+        return buf;
+      } finally {
+        clearTimeout(timer);
+      }
     }
 }

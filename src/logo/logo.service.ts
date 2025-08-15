@@ -162,10 +162,17 @@ export class LogoService {
         response.data[i].id = logo.id_prompted_logo
 
         // Creating final response, only with watermarked url to image
-        new_response.data.push({
+        new_response.data.push(process.env.NODE_ENV == 'dev' ?
+          {
           id: response.data[i].id,
-          image_url: response.data[i].watermarked_url
-        })
+          image_url: response.data[i].watermarked_url,
+          buyable_logo_url: response.data[i].image_url,
+          } :
+          {
+          id: response.data[i].id,
+          image_url: response.data[i].watermarked_url,
+          }
+        )
       }
 
       return new_response;
