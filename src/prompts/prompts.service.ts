@@ -51,11 +51,11 @@ export class PromptsService {
                                 
                         ### OUTPUT FORMAT:
                         Respond ONLY with a JSON array of ${amount} prompt strings. Each prompt must be ≤ 220 characters and fully self-contained.`
-            case 4: // Flux.1 [dev] 3 | last update: 11.08.25
+            case 4: // Flux.1 [dev] 3 | last update: 15.08.25
                 return `
                 -- Details before generation: must include company ${body.brand_name}, ${body.additional_details};
                 -- Negatives: Symbols such as trademark or copyright, Text, ${body.things_to_exclude} 
-                ;Company Logo on a white background
+                ;One Company Logo on a white background
                 ,Rasterized, centered ${body.logo_style} vector logo with ${body.brand_colors} colors
                 ,print logotype
                 ,company '${body.brand_name}' (must be included)
