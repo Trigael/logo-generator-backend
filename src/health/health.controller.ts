@@ -11,7 +11,7 @@ import {
 } from '@nestjs/terminus';
 import { PrismaHealthCheckService } from './prisma.health';
 
-@Controller('health')
+@Controller()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
@@ -21,15 +21,20 @@ export class HealthController {
     private readonly prismaHealth: PrismaHealthCheckService,
   ) {}
 
-  @Get()
+  @Get('/health')
+  healthCheck() {
+    return {
+      status: 'ok',
+      commit: process.env.GIT_COMMIT_HASH ?? 'unknown',
+    };
+  }
+
+  @Get('/ready')
   @HealthCheck()
-  check() {
+  async ready() {
     return this.health.check([
-      () => this.memory.checkHeap('heap_memory', 300 * 1024 * 1024), // 300MB
-      () => this.disk.checkStorage('disk_health', {
-        path: '/', // TODO: Docker upgrade
-        thresholdPercent: 0.75, // 75%
-      }),
+      () => this.memory.checkHeap('heap_memory', 300 * 1024 * 1024), 
+      () => this.disk.checkStorage('disk_health', { path: '/', thresholdPercent: 0.75 }),
       () => this.prismaHealth.checkPrisma(),
     ]);
   }
