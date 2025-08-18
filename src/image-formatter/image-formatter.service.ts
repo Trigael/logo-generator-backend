@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { vectorize, Preset } from '@neplex/vectorizer'
 import axios from 'axios';
 
 // Services
@@ -97,5 +98,16 @@ export class ImageFormatterService {
       const url = await this.s3.uploadImage(resizedBuffer, key, contentType);
 
       return url;
+    }
+
+    async imageUrlToSvgBuffer(imgUrl: string): Promise<Buffer> {
+      const res = await axios.get(imgUrl, { responseType: 'arraybuffer' })
+      const png = Buffer.from(res.data)
+
+      // VTracer vectorizes image by preset
+      const svgString = await vectorize(png, Preset.Poster)
+
+      // returning as Buffer
+      return Buffer.from(svgString, 'utf8')
     }
 }

@@ -14,8 +14,11 @@ import { InternalErrorException } from 'src/utils/exceptios';
 
 import { getSecret } from 'src/utils/helpers.util';
 
-type content_types = {
-  'image/png'
+export enum image_content_types {
+  Png = 'image/png',
+  Svg = 'image/svg+xml',
+  Jpeg = 'image/jpeg',
+  Webp = 'image/webp',
 }
 
 @Injectable()
@@ -45,6 +48,14 @@ export class S3Service {
     });
   }
 
+  /**
+   * 
+   * @param buffer 
+   * @param key 
+   * @param contentType exp. 'image/svg+xml', 'image/png'
+   * @param is_public 
+   * @returns 
+   */
   async uploadImage(buffer: Buffer, key: string, contentType = 'image/png', is_public: boolean = false) {
     try {
       const command: any = new PutObjectCommand({
