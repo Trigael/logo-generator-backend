@@ -1,3 +1,6 @@
+#!/bin/sh
+set -e
+
 if [ -z "$DB_TRANSACTION_URL" ]; then
   echo "❌ DB_TRANSACTION_URL is not set at runtime"
   exit 1
