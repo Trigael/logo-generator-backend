@@ -1,0 +1,25 @@
+version: "3.8"
+
+networks:
+  app-net:
+    driver: overlay
+    attachable: true
+
+secrets:
+  REDIS_PASSWORD:
+    external: true
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["sh","-lc","redis-server --appendonly yes --bind 0.0.0.0 --requirepass $(cat /run/secrets/REDIS_PASSWORD) --protected-mode yes"]
+    networks: [app-net]
+    secrets: [REDIS_PASSWORD]
+    volumes:
+      - redis-data:/data
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  redis-data:

@@ -62,7 +62,9 @@ async function bootstrap() {
   // Handles all Exceptions | + Sentry, Logger
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalFilters(new AllExceptionsFilter()); 
-  
+
+  app.enableShutdownHooks(); // graceful SIGTERM
+
   await app.listen(port, '0.0.0.0', () => {
     console.log(`API running at Port: ${port} in mode: ${getSecret(process.env.NODE_ENV ?? '')}`)
   });
