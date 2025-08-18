@@ -54,7 +54,7 @@ jobs:
       SHORT_SHA: ${{ github.sha }}
       SHORT_SHA_SAFE: ${{ github.sha }}
       GIT_COMMIT_HASH: ${{ github.sha }}
-      TARGET_HOST: ${{ github.ref == 'refs/heads/main' && '138.199.222.129' || github.ref == 'refs/heads/staging' && '78.47.30.210' }}
+      TARGET_HOST: ${{ github.ref == 'refs/heads/main' && '78.47.30.210' || github.ref == 'refs/heads/staging' && '138.199.222.129' }}
     permissions:
       packages: write
       contents: read
