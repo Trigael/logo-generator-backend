@@ -79,7 +79,7 @@ jobs:
       
       - name: Push Docker secrets to server
         uses: appleboy/ssh-action@master
-
+ 
         with:
           host: ${{ env.TARGET_HOST }}
           username: deploy
