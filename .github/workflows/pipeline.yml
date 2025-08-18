@@ -111,7 +111,7 @@ jobs:
               docker network create --driver overlay app-net
             fi
 
-      # ---------- STAGING DEPLOY (rolling, port 4000) ----------
+      # ---------- STAGING (rolling, port 4000) ----------
       - name: Deploy STAGING (rolling)
         if: github.ref == 'refs/heads/staging'
         uses: appleboy/ssh-action@master
@@ -128,7 +128,7 @@ jobs:
             export GIT_COMMIT_HASH="${{ github.sha }}"
             export SHORT_SHA_SAFE=$(echo "${{ github.sha }}" | cut -c1-12)
             export DB_URL_KEY="${{ secrets.DB_TRANSACTION_URL_STAGING }}"
-            export REDIS_URL_KEY="${{ github.ref == 'refs/heads/main' && secrets.REDIS_URL || secrets.REDIS_URL_STAGING }}"
+            export REDIS_URL_KEY="${{ secrets.REDIS_URL_STAGING }}"
             export EXPOSE_PORT=4000
 
             envsubst '${REDIS_URL_KEY} ${DB_URL_KEY} ${ENV_KEY} ${GIT_COMMIT_HASH} ${SHORT_SHA_SAFE} ${EXPOSE_PORT}' \
@@ -136,14 +136,14 @@ jobs:
 
             docker stack deploy -c ~/docker-stack.generated.yaml --with-registry-auth ai-logo-generator
 
-            # Bezpečný úklid (staging)
+            # Bezpečný úklid
             USED=$(docker service ls -q | xargs -r docker service inspect --format "{{range .Spec.TaskTemplate.ContainerSpec.Secrets}}{{.SecretName}}{{\"\n\"}}{{end}}" | sort -u)
             for s in $(docker secret ls --format "{{.Name}}" | grep -E "_[0-9a-f]{12}$" || true); do
               echo "$USED" | grep -qx "$s" || docker secret rm "$s" || true
             done
             docker image prune -af
 
-      # ---------- PRODUCTION DEPLOY (blue-green 4001/4002) ----------
+      # ---------- PRODUCTION (blue-green 4001/4002) ----------
       - name: Deploy PROD (blue-green)
         if: github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@master
@@ -153,8 +153,8 @@ jobs:
           key: ${{ secrets.PRODUCTION_DEPLOY_SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            ACTIVE_FILE="/etc/caddy/ACTIVE_COLOR"
-            ACTIVE=$(cat $ACTIVE_FILE 2>/dev/null || echo blue)
+            ACTIVE_FILE="$HOME/ACTIVE_COLOR"
+            ACTIVE=$(cat "$ACTIVE_FILE" 2>/dev/null || echo blue)
             TARGET=$([ "$ACTIVE" = "blue" ] && echo "green" || echo "blue")
             BLUE_PORT=4001; GREEN_PORT=4002
             TARGET_PORT=$([ "$TARGET" = "blue" ] && echo $BLUE_PORT || echo $GREEN_PORT)
@@ -174,7 +174,17 @@ jobs:
 
             docker stack deploy -c ~/docker-stack.generated.yaml --with-registry-auth "ai-logo-generator-$TARGET"
 
-            # Health-check nového portu
+            # Počkej, až service běží
+            ATTEMPTS=60
+            while [ $ATTEMPTS -gt 0 ]; do
+              if docker service ps "ai-logo-generator-$TARGET"_web --format '{{.CurrentState}}' | grep -q 'Running'; then
+                break
+              fi
+              sleep 2; ATTEMPTS=$((ATTEMPTS-1))
+            done
+            [ $ATTEMPTS -gt 0 ] || { echo "Tasks not running"; docker service ps "ai-logo-generator-$TARGET"_web --no-trunc; exit 1; }
+
+            # Health check na host portu
             ATTEMPTS=60
             while [ $ATTEMPTS -gt 0 ]; do
               if curl -fsS "http://127.0.0.1:${TARGET_PORT}/health" >/dev/null 2>&1; then
@@ -182,14 +192,19 @@ jobs:
               fi
               sleep 2; ATTEMPTS=$((ATTEMPTS-1))
             done
-            [ $ATTEMPTS -gt 0 ] || { echo "Target not healthy"; exit 1; }
+            if [ $ATTEMPTS -eq 0 ]; then
+              echo "Target not healthy"
+              docker service logs --tail 200 "ai-logo-generator-$TARGET"_web || true
+              exit 1
+            fi
 
-            # Přepni Caddy na nový port
-            sudo sed -i "s/reverse_proxy .*:4[0-9][0-9][0-9]/reverse_proxy 127.0.0.1:${TARGET_PORT}/" /etc/caddy/Caddyfile
-            sudo caddy reload
-            echo "$TARGET" | sudo tee "$ACTIVE_FILE" >/dev/null
+            # Přepni upstream (soubor vlastní deploy, sudo netřeba)
+            printf 'reverse_proxy 127.0.0.1:%s\n' "${TARGET_PORT}" > /etc/caddy/includes/upstream.caddy
+            # Reload Caddy (NOPASSWD povolený jednou v sudoers)
+            sudo -n systemctl reload caddy
+            echo "$TARGET" > "$ACTIVE_FILE"
 
-            # Drain – ponech původní blue doběhnout (nejdelší req ~20s)
+            # Drain window
             sleep 30
 
             # Sundej starý stack
