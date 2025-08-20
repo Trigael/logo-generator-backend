@@ -236,8 +236,9 @@ export class ImageGeneratorService {
         const watermarked = await this._addDiagonalWatermark(image_buffer, 'LOGONEST.AI');
 
         // Compress image
-        const compressedBuffer = await this.sharp(watermarked)
-          .jpeg({ quality: 80 })
+        const compressedBuffer = await this.sharp(watermarked) // resolution 200x200, downscaling picture quality by 40%
+          .resize(200, 200)
+          .jpeg({ quality: 50 })
           .toBuffer();
 
         // Upload compressed watermarked image onto bucket
@@ -293,7 +294,7 @@ export class ImageGeneratorService {
       ctx.rotate(-Math.PI / 4);
 
       // Gap between rows and columns in watermark grid
-      const stepX = 250;
+      const stepX = 275;
       const stepY = 200
 
       // Creating grid for diagonals
