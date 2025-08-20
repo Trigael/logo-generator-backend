@@ -81,7 +81,7 @@ export class S3Service {
     }
   }
 
-  async getImage(key: string, expiration = 600): Promise<string> {
+  async getImage(key: string, expiration = 60): Promise<string> {
     try {
       const cleanedKey = key.replace(/^\/+/, '');
     
@@ -90,7 +90,7 @@ export class S3Service {
         return `${this.bucket_endpoint}/${this.bucket_name}/${cleanedKey}`;
       }
     
-      // Else return signed URL (works 10 mins)
+      // Else return signed URL
       const command = new GetObjectCommand({
         Bucket: this.bucket,
         Key: cleanedKey,
@@ -99,7 +99,7 @@ export class S3Service {
       // Checking if object exits
       await this.s3.send(command);
     
-      const signedUrl = await getSignedUrl(this.s3, command, { expiresIn: expiration }); // default = 10 mins
+      const signedUrl = await getSignedUrl(this.s3, command, { expiresIn: expiration }); // default = 1 min
 
       return signedUrl;
     } catch (error) {
