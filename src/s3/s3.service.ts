@@ -58,19 +58,19 @@ export class S3Service {
    */
   async uploadImage(buffer: Buffer, key: string, contentType = 'image/png', is_public: boolean = false) {
     try {
+      const cleanedKey = key.replace(/^\/+/, '');
       const command: any = new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         Body: buffer,
         ContentType: contentType,
+        ...(is_public || cleanedKey.startsWith('watermarked/') ? { ACL: 'public-read' } : {}),
       });
-
-      if(is_public) command.ACL = 'public-read'
 
       await this.s3.send(command);
 
       if(is_public) return `${this.bucket_endpoint}/${this.bucket_name}/${key}`;
-
+      
       return this.getImage(key)
     } catch (error) {
       this.logger.error(`[S3] Internal error occured during image upload: ${error}`, {

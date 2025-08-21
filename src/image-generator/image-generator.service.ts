@@ -127,7 +127,7 @@ export class ImageGeneratorService {
           // Create transparent PNG
           const png_buffer = await this.imageFormatter.formatIntoTransparentPng(original);
 
-          img.image_url = await this.s3.uploadImage(png_buffer, `temp/temp_logo-${img.id}.png`, 'image/png', true);
+          img.image_url = await this.s3.uploadImage(png_buffer, `temp/temp_logo-${img.id}.png`, 'image/png');
         }),
       );
 
