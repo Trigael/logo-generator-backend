@@ -12,7 +12,7 @@ export class CronsService {
         private readonly logoService: LogoService,
     ) {}
 
-    // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
     async handleUnboughtLogos() {
         await this.logoService.deleteUnboughtLogosOlderThan(this.delete_logo_after)
     }
